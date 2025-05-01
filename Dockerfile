@@ -1,0 +1,33 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Ensure host.docker.internal is available for Mac and Linux
+RUN echo "127.0.0.1 host.docker.internal" >> /etc/hosts || true
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+
+COPY requirements.txt requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+COPY .streamlit .streamlit
+COPY LICENSE LICENSE
+COPY static static
+COPY .env .env
+# COPY run_streamlit.py run_streamlit.py
+COPY app.py app.py
+COPY src src
+
+# Define the basic ENTRYPOINT, without specific arguments
+ENTRYPOINT ["streamlit", "run", "app.py"]
+
+# Optionally, we can define a default CMD as fallback for flexibility
+CMD ["--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
+
+
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health

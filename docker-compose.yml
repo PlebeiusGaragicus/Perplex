@@ -1,0 +1,41 @@
+services:
+
+  streamlit:
+    container_name: ${APP_NAME:?Your .env file must have a APP_NAME variable}
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "${STREAMLIT_PORT:?Your .env file must have a STREAMLIT_PORT variable}:8501"
+
+    volumes:
+      # Map local files to the container for live updates (useful for development)
+      # TODO: should this be removed for production?  Likely...
+      - ./src:/app/src
+
+    # Add extra hosts to allow Docker to access Wireguard network
+    extra_hosts:
+      - "wireguard:10.10.10.10"
+    
+    environment:
+      # Avoid output buffering; this line ensures that print() statements are sent directly to the terminal
+      - PYTHONUNBUFFERED=1
+      # Set DEBUG to 1 (in your .env file) if you want to see the logs
+      - DEBUG=${DEBUG:-0}
+      - APP_NAME=${APP_NAME:?Your .env file must have a APP_NAME variable}
+      # Service URLs for connecting to services
+      - SEARXNG_URL=http://wireguard:4001
+      - OLLAMA_URL=http://host.docker.internal:11434
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:${STREAMLIT_PORT}/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    restart: unless-stopped
+
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
+    # command: ["streamlit", "run", "run_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--logger.level=debug"]
