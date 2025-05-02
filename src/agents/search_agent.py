@@ -67,13 +67,13 @@ def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=
                 
                 # Store the user query and fallback response in the conversation history
                 conversation_manager.add_message(conversation_id, "user", query)
-                conversation_manager.add_message(conversation_id, "assistant", fallback_response)
+                conversation_manager.add_message(conversation_id, "assistant", fallback_response, sources=result.get("search_results"))
                 
                 return fallback_response, result.get("search_results"), conversation_id
         
         # Store the user query and AI response in the conversation history
         conversation_manager.add_message(conversation_id, "user", query)
-        conversation_manager.add_message(conversation_id, "assistant", result.get("answer", ""))
+        conversation_manager.add_message(conversation_id, "assistant", result.get("answer", ""), sources=result.get("search_results"))
         
         # Return the answer, search results, and conversation ID
         return result.get("answer"), result.get("search_results"), conversation_id
@@ -87,14 +87,22 @@ def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=
             config = load_config()
             searxng_url = config.get("searxng", {}).get("url", "http://searxng:8080")
             
-            # Perform direct search
-            results = perform_web_search(query, searxng_url, focus_mode)
+            # Perform direct search - now returns (results, error_message)
+            results, search_error = perform_web_search(query, searxng_url, focus_mode)
+            
+            # Handle search error if present
+            if search_error:
+                error_message = f"Search error: {search_error}"
+                # Store the user query and error message in the conversation history
+                conversation_manager.add_message(conversation_id, "user", query)
+                conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
+                return error_message, [], conversation_id
             
             if not results:
                 error_message = "I couldn't find any results for your query. Please try a different search term or focus mode."
                 # Store the user query and error message in the conversation history
                 conversation_manager.add_message(conversation_id, "user", query)
-                conversation_manager.add_message(conversation_id, "assistant", error_message)
+                conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
                 return error_message, [], conversation_id
             
             # Create a simple fallback response
@@ -110,7 +118,7 @@ def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=
             
             # Store the user query and fallback response in the conversation history
             conversation_manager.add_message(conversation_id, "user", query)
-            conversation_manager.add_message(conversation_id, "assistant", fallback_response)
+            conversation_manager.add_message(conversation_id, "assistant", fallback_response, sources=results)
             
             return fallback_response, results, conversation_id
             
@@ -120,6 +128,6 @@ def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=
             
             # Store the user query and error message in the conversation history
             conversation_manager.add_message(conversation_id, "user", query)
-            conversation_manager.add_message(conversation_id, "assistant", error_message)
+            conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
             
             return error_message, [], conversation_id

@@ -24,8 +24,12 @@ def search_searxng(query, engines=None, page=1, num_results=10):
     config = load_config()
     searxng_url = config.get("searxng", {}).get("url", "http://10.10.10.10:4001")
     
-    print(f"\n[DEBUG] SearXNG URL: {searxng_url}")
-    print(f"[DEBUG] Environment: {socket.gethostname()}")
+    # Load debug flag from config
+    DEBUG = config.get("debug", False)
+    
+    if DEBUG:
+        print(f"\n[DEBUG] SearXNG URL: {searxng_url}")
+        print(f"[DEBUG] Environment: {socket.gethostname()}")
     
     # Build search URL
     search_url = f"{searxng_url}/search"
@@ -43,59 +47,43 @@ def search_searxng(query, engines=None, page=1, num_results=10):
         "results": num_results
     }
     
-    print(f"[DEBUG] Search parameters: {params}")
+    if DEBUG:
+        print(f"[DEBUG] Search parameters: {params}")
     
     try:
-        # Test connectivity first
+        # Make request with proper error handling
+        if DEBUG:
+            print(f"[DEBUG] Making search request to {search_url}")
+            
+        # Prepare for potential errors
+        error_message = None
         try:
-            print(f"[DEBUG] Testing connectivity to {searxng_url}...")
-            parsed_url = urlparse(searxng_url)
-            hostname = parsed_url.netloc.split(':')[0]
-            port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
-            
-            print(f"[DEBUG] Resolving hostname: {hostname}")
-            try:
-                ip_address = socket.gethostbyname(hostname)
-                print(f"[DEBUG] Resolved {hostname} to {ip_address}")
-            except socket.gaierror as e:
-                print(f"[DEBUG] DNS resolution failed: {str(e)}")
-            
-            print(f"[DEBUG] Testing socket connection to {hostname}:{port}")
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(5)
-            result = s.connect_ex((hostname, port))
-            s.close()
-            if result == 0:
-                print(f"[DEBUG] Socket connection successful")
-            else:
-                print(f"[DEBUG] Socket connection failed with error code {result}")
-                
-            # Try ping
-            try:
-                print(f"[DEBUG] Pinging {hostname}...")
-                ping_param = "-n" if platform.system().lower() == "windows" else "-c"
-                ping_cmd = ["ping", ping_param, "1", hostname]
-                ping_output = subprocess.run(ping_cmd, capture_output=True, text=True, timeout=5)
-                print(f"[DEBUG] Ping result: {ping_output.returncode}")
-                print(f"[DEBUG] Ping output: {ping_output.stdout[:200]}...")
-            except Exception as e:
-                print(f"[DEBUG] Ping failed: {str(e)}")
-                
-        except Exception as e:
-            print(f"[DEBUG] Connectivity test error: {str(e)}")
-        
-        # Make request
-        print(f"[DEBUG] Making HTTP request to {search_url}")
-        response = httpx.get(search_url, params=params, timeout=10)
-        
-        # Check for errors
-        if response.status_code != 200:
-            print(f"[ERROR] SearXNG error: {response.status_code} - {response.text}")
-            return []
+            response = httpx.get(search_url, params=params, timeout=10)
+            response.raise_for_status()  # Raise exception for 4XX/5XX status codes
+        except httpx.RequestError as e:
+            error_message = f"Connection error when contacting SearXNG: {str(e)}"
+            if DEBUG:
+                print(f"[ERROR] {error_message}")
+            return [], error_message
+        except httpx.HTTPStatusError as e:
+            error_message = f"SearXNG returned error status: {e.response.status_code} - {e.response.reason_phrase}"
+            if DEBUG:
+                print(f"[ERROR] {error_message}")
+                print(f"[ERROR] Response content: {e.response.text[:200]}...")
+            return [], error_message
         
         # Parse response
-        print(f"[DEBUG] Received response with status {response.status_code}")
-        data = response.json()
+        if DEBUG:
+            print(f"[DEBUG] Received response with status {response.status_code}")
+            
+        try:
+            data = response.json()
+        except Exception as e:
+            error_message = f"Error parsing SearXNG response: {str(e)}"
+            if DEBUG:
+                print(f"[ERROR] {error_message}")
+                print(f"[ERROR] Response content: {response.text[:200]}...")
+            return [], error_message
         
         # Extract results
         results = []
@@ -113,13 +101,20 @@ def search_searxng(query, engines=None, page=1, num_results=10):
             
             results.append(result_obj)
         
-        print(f"[DEBUG] Found {len(results)} results")
-        return results
+        # Check if we got any results
+        if not results and not error_message:
+            error_message = "No search results found"
+            if DEBUG:
+                print(f"[INFO] {error_message}")
+        
+        return results, error_message
     
     except Exception as e:
-        print(f"[ERROR] Error searching SearXNG: {str(e)}")
-        print(f"[DEBUG] Exception details: {traceback.format_exc()}")
-        return []
+        error_message = f"Error searching SearXNG: {str(e)}"
+        if DEBUG:
+            print(f"[ERROR] {error_message}")
+            print(f"[DEBUG] Exception details: {traceback.format_exc()}")
+        return [], error_message
 
 def search_news(query, num_results=10):
     """
@@ -130,7 +125,7 @@ def search_news(query, num_results=10):
         num_results (int): Number of results to return
         
     Returns:
-        list: List of news results
+        tuple: (List of news results, Error message if any)
     """
     # Use news-specific engines
     engines = ["bing news", "google news"]
@@ -148,7 +143,7 @@ def perform_web_search(query, searxng_url=None, focus_mode="all", num_results=10
         num_results (int): Number of results to return
         
     Returns:
-        list: List of search results
+        tuple: (List of search results, Error message if any)
     """
     # Define search engines based on focus mode
     engines = {
@@ -174,10 +169,12 @@ def perform_web_search(query, searxng_url=None, focus_mode="all", num_results=10
         config["searxng"] = {"url": searxng_url}
     
     # Perform the search
-    results = search_searxng(query, engines=selected_engines, num_results=num_results)
+    results, error_message = search_searxng(query, engines=selected_engines, num_results=num_results)
     
     # If no results found, try a more general search
-    if not results and focus_mode != "all":
-        results = search_searxng(query, engines=engines["all"], num_results=num_results)
+    if not results and focus_mode != "all" and error_message is None:
+        results, fallback_error = search_searxng(query, engines=engines["all"], num_results=num_results)
+        if not error_message and fallback_error:
+            error_message = fallback_error
     
-    return results
+    return results, error_message

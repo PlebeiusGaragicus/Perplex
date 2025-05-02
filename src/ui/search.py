@@ -168,11 +168,15 @@ def display_conversation_history(conversation_manager):
             with st.chat_message("assistant"):
                 st.markdown(messages[i]['content'])
                 
-                # Try to extract citation information
-                # This is a simple heuristic - in a real app you might want to store citations separately
-                response_text = messages[i]['content']
-                if '[1]' in response_text:  # Check if there are citations
-                    with st.expander("Sources"):
-                        st.markdown("Citation information is available in the response above.")
-                        st.markdown("For a more complete implementation, we would store and display the actual sources here.")
+                # Display sources if available
+                if 'sources' in messages[i] and messages[i]['sources']:
+                    sources = messages[i]['sources']
+                    with st.expander(f"Sources ({len(sources)})"):
+                        for j, source in enumerate(sources):
+                            st.markdown(f"**[{j+1}] {source['title']}**")
+                            if source['url']:
+                                st.markdown(f"[{source['url']}]({source['url']})")
+                            if source['content']:
+                                st.markdown(f"_{source['content']}_")
+                            st.divider()
             i += 1

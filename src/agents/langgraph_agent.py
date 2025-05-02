@@ -51,10 +51,21 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
     # Step 1: Search the web
     logger.info(f"Step 1: Searching the web for: {query}")
     try:
-        # Get search results from SearXNG
+        # Get search results from SearXNG - now returns (results, error_message)
         config = load_config()
         searxng_url = config.get("searxng", {}).get("url", "http://searxng:8080")
-        results = perform_web_search(query, searxng_url, focus_mode)
+        results, search_error = perform_web_search(query, searxng_url, focus_mode)
+        
+        # Handle search error if present
+        if search_error:
+            return {
+                "query": query,
+                "answer": f"I encountered an error when searching: {search_error}",
+                "citations": [],
+                "error": search_error,
+                "search_results": [],
+                "steps": [f"Search error: {search_error}"]
+            }
         
         if not results:
             return {
@@ -85,7 +96,9 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
         system_prompt = """You are a helpful assistant that answers questions based on search results.
         Your answer should be comprehensive, accurate, and based solely on the provided search results.
         Always include citations in your answer using the format [1], [2], etc. that refer to the numbered search results.
-        If the search results don't contain enough information to answer the question, say so clearly."""
+        If the search results don't contain enough information to answer the question, say so clearly.
+        
+        IMPORTANT: Do not include a separate "References" section at the end of your answer. The citations [1], [2], etc. within your text are sufficient, as the sources will be displayed separately in the UI."""
         
         # Create messages list for the chat
         messages = [
@@ -105,7 +118,8 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
             
             Please provide a comprehensive answer to this follow-up question based on these search results.
             Include citations to the relevant sources using the format [1], [2], etc.
-            Remember to consider the conversation history for context."""
+            Remember to consider the conversation history for context.
+            Do not include a separate References section at the end of your answer."""
         else:
             # Initial question
             user_prompt = f"""Question: {query}
@@ -114,14 +128,15 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
             {formatted_results}
             
             Please provide a comprehensive answer to the question based on these search results.
-            Include citations to the relevant sources using the format [1], [2], etc."""
+            Include citations to the relevant sources using the format [1], [2], etc.
+            Do not include a separate References section at the end of your answer."""
         
         # Add the current user query with search results
         messages.append({"role": "user", "content": user_prompt})
         
         # Get Ollama config
         ollama_url = config.get("ollama", {}).get("base_url", "http://host.docker.internal:11434")
-        model = config.get("ollama", {}).get("default_model", "phi4-mini:3.8b-q8_0")
+        model = config.get("ollama", {}).get("default_model", "llama3.1:8b")
         
         # Generate response
         logger.info(f"Calling Ollama at {ollama_url} with model {model}")

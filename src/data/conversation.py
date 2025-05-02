@@ -58,6 +58,19 @@ class ConversationManager:
             )
             ''')
             
+            # Create sources table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                message_id INTEGER,
+                title TEXT,
+                url TEXT,
+                content TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (message_id) REFERENCES messages (id)
+            )
+            ''')
+            
             conn.commit()
             conn.close()
             logger.info(f"Database initialized at {self.db_path}")
@@ -97,7 +110,7 @@ class ConversationManager:
             logger.error(f"Error creating conversation: {str(e)}")
             return -1
     
-    def add_message(self, conversation_id: int, role: str, content: str) -> int:
+    def add_message(self, conversation_id: int, role: str, content: str, sources: List[Dict[str, Any]] = None) -> int:
         """
         Add a message to a conversation
         
@@ -105,6 +118,7 @@ class ConversationManager:
             conversation_id (int): The conversation ID
             role (str): The message role (user, assistant)
             content (str): The message content
+            sources (List[Dict[str, Any]], optional): List of sources used for this message
             
         Returns:
             int: The message ID
@@ -125,6 +139,15 @@ class ConversationManager:
             )
             
             message_id = cursor.lastrowid
+            
+            # Add sources if provided
+            if sources and message_id > 0:
+                for source in sources:
+                    cursor.execute(
+                        "INSERT INTO sources (message_id, title, url, content) VALUES (?, ?, ?, ?)",
+                        (message_id, source.get('title', ''), source.get('url', ''), source.get('content', ''))
+                    )
+            
             conn.commit()
             conn.close()
             
@@ -133,6 +156,35 @@ class ConversationManager:
         except Exception as e:
             logger.error(f"Error adding message: {str(e)}")
             return -1
+    
+    def get_message_sources(self, message_id: int) -> List[Dict[str, Any]]:
+        """
+        Get sources for a message
+        
+        Args:
+            message_id (int): The message ID
+            
+        Returns:
+            List[Dict[str, Any]]: The sources
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "SELECT * FROM sources WHERE message_id = ? ORDER BY id",
+                (message_id,)
+            )
+            
+            sources = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+            
+            logger.info(f"Retrieved {len(sources)} sources for message {message_id}")
+            return sources
+        except Exception as e:
+            logger.error(f"Error getting message sources: {str(e)}")
+            return []
     
     def get_conversation_messages(self, conversation_id: int) -> List[Dict[str, Any]]:
         """
@@ -155,6 +207,14 @@ class ConversationManager:
             )
             
             messages = [dict(row) for row in cursor.fetchall()]
+            
+            # Get sources for each message
+            for message in messages:
+                if message["role"] == "assistant":
+                    message["sources"] = self.get_message_sources(message["id"])
+                else:
+                    message["sources"] = []
+            
             conn.close()
             
             logger.info(f"Retrieved {len(messages)} messages from conversation {conversation_id}")
