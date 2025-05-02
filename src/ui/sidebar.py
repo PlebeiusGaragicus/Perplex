@@ -1,13 +1,14 @@
 import streamlit as st
+from src.data.conversation import ConversationManager
 
 def render_sidebar():
     """
     Renders the sidebar navigation for Perplexica
     """
     with st.sidebar:
-        st.title("🔎 Perplexica")
-        st.markdown("---")
-        
+        # st.title("🔎 Perplexica")
+        # st.markdown("---")
+
         # Navigation tabs
         if st.button("🔍 Search", use_container_width=True, 
                     type="primary" if st.session_state.current_tab == "search" else "secondary"):
@@ -24,6 +25,56 @@ def render_sidebar():
             st.session_state.current_tab = "settings"
             st.rerun()
         
+        # Conversation history section
+        st.markdown("---")
+        st.subheader("Conversations")
+        
+        # Initialize conversation manager
+        conversation_manager = ConversationManager()
+        
+        # New conversation button at the top
+        if st.button("+ New Conversation", use_container_width=True, type="primary"):
+            st.session_state.active_conversation_id = None
+            st.rerun()
+        
+        # Get all conversations
+        conversations = conversation_manager.get_conversations()
+        
+        # Display conversations as buttons
+        if conversations:
+            st.divider()
+            for conv in conversations:
+                # Get the first user message to use as the button label
+                messages = conversation_manager.get_conversation_messages(conv['id'])
+                first_user_message = next((msg['content'] for msg in messages if msg['role'] == 'user'), "Untitled")
+                
+                # Truncate the message to 12 characters
+                button_label = first_user_message[:12] + "..." if len(first_user_message) > 12 else first_user_message
+                
+                # Highlight the active conversation
+                is_active = st.session_state.active_conversation_id == conv['id']
+                button_type = "primary" if is_active else "secondary"
+                
+                # Create a container for each conversation with delete option
+                with st.container():
+                    col1, col2 = st.columns([4, 1])
+                    
+                    # Main conversation button
+                    with col1:
+                        if st.button(button_label, key=f"conv_{conv['id']}", use_container_width=True, type=button_type):
+                            st.session_state.active_conversation_id = conv['id']
+                            st.rerun()
+                    
+                    # Delete button
+                    with col2:
+                        if st.button("🗑️", key=f"del_{conv['id']}"):
+                            conversation_manager.delete_conversation(conv['id'])
+                            if st.session_state.active_conversation_id == conv['id']:
+                                st.session_state.active_conversation_id = None
+                            st.rerun()
+        else:
+            st.info("No conversations yet")
+            
         st.markdown("---")
         
         # Focus mode selection (only visible in search tab)
@@ -43,24 +94,3 @@ def render_sidebar():
                            type="primary" if st.session_state.focus_mode == mode_key else "secondary"):
                     st.session_state.focus_mode = mode_key
                     st.rerun()
-        
-        # Copilot mode toggle (only visible in search tab)
-        if st.session_state.current_tab == "search":
-            st.markdown("---")
-            st.subheader("Search Mode")
-            copilot_enabled = st.toggle("Enable Copilot Mode", value=st.session_state.copilot_mode)
-            if copilot_enabled != st.session_state.copilot_mode:
-                st.session_state.copilot_mode = copilot_enabled
-                st.rerun()
-            
-            if st.session_state.copilot_mode:
-                st.info("Copilot mode performs multi-hop searches to find more relevant information.")
-        
-        # Footer
-        # st.markdown("---")
-        # st.markdown("### About")
-        # st.markdown("""
-        # Perplexica is an open-source AI-powered search tool that dives deep into the internet to find precise answers.
-        
-        # [GitHub](https://github.com/ItzCrazyKns/Perplexica)
-        # """)

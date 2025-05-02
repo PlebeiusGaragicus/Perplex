@@ -2,7 +2,16 @@ import streamlit as st
 from src.agents.search_agent import perform_search
 from src.data.conversation import ConversationManager
 
+
+def center_text(type, text, size=None):
+    if size == None:
+        st.write(f"<{type} style='text-align: center;'>{text}</{type}>", unsafe_allow_html=True)
+    else:
+        st.write(f"<{type} style='text-align: center; font-size: {size}px;'>{text}</{type}>", unsafe_allow_html=True)
+
+
 def render_search_interface():
+
     """
     Renders the main search interface for Perplexica
     """
@@ -24,55 +33,11 @@ def render_search_interface():
             del st.session_state["search_query"]
         st.session_state.clear_query = False
     
-    # Sidebar for conversation history
-    with st.sidebar:
-        st.title("Conversations")
-        
-        # New conversation button at the top
-        if st.button("+ New Conversation", use_container_width=True, type="primary"):
-            st.session_state.active_conversation_id = None
-            st.rerun()
-        
-        # Get all conversations
-        conversations = conversation_manager.get_conversations()
-        
-        # Display conversations as buttons
-        if conversations:
-            st.divider()
-            for conv in conversations:
-                # Get the first user message to use as the button label
-                messages = conversation_manager.get_conversation_messages(conv['id'])
-                first_user_message = next((msg['content'] for msg in messages if msg['role'] == 'user'), "Untitled")
-                
-                # Truncate the message to 12 characters
-                button_label = first_user_message[:12] + "..." if len(first_user_message) > 12 else first_user_message
-                
-                # Highlight the active conversation
-                is_active = st.session_state.active_conversation_id == conv['id']
-                button_type = "primary" if is_active else "secondary"
-                
-                # Create a container for each conversation with delete option
-                with st.container():
-                    col1, col2 = st.columns([4, 1])
-                    
-                    # Main conversation button
-                    with col1:
-                        if st.button(button_label, key=f"conv_{conv['id']}", use_container_width=True, type=button_type):
-                            st.session_state.active_conversation_id = conv['id']
-                            st.rerun()
-                    
-                    # Delete button
-                    with col2:
-                        if st.button("🗑️", key=f"del_{conv['id']}"):
-                            conversation_manager.delete_conversation(conv['id'])
-                            if st.session_state.active_conversation_id == conv['id']:
-                                st.session_state.active_conversation_id = None
-                            st.rerun()
-        else:
-            st.info("No conversations yet")
+    # Conversation history is now handled in sidebar.py
     
     # Main content area
-    st.title("Perplexica Search")
+    # st.title("Perplexica Search")
+    center_text(type="h1", text="Perplexity Search")
     
     # Focus mode indicator
     focus_mode_labels = {
@@ -85,11 +50,15 @@ def render_search_interface():
     }
     
     # Display current mode
-    mode_text = f"Mode: {focus_mode_labels[st.session_state.focus_mode]}"
-    if st.session_state.copilot_mode:
-        mode_text += " (Copilot Enabled)"
-    st.markdown(f"**{mode_text}**")
-    
+    # mode_text = f"Mode: {focus_mode_labels[st.session_state.focus_mode]}"
+    # st.markdown(f"**{mode_text}**")
+
+    # Copilot mode toggle in the main area with improved explanation
+    copilot_enabled = st.toggle("Enable Copilot Mode", value=st.session_state.copilot_mode)
+    if copilot_enabled != st.session_state.copilot_mode:
+        st.session_state.copilot_mode = copilot_enabled
+        st.rerun()
+
     # Update conversations in session state
     conversations = conversation_manager.get_conversations()
     if conversations:

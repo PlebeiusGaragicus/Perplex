@@ -18,9 +18,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+def hide_markdown_header_links():
+    """
+    https://discuss.streamlit.io/t/hide-titles-link/19783/3
+    """
+
+        # <style>
+        # .css-15zrgzn {display: none}
+        # .css-eczf16 {display: none}
+        # .css-jn99sy {display: none}
+        # .st-emotion-cache-gi0tri {display: none}
+        # .e121c1cl3 {display: none}
+        # </style>
+    st.markdown("""
+        <style>
+        .stApp a:first-child {
+            display: none;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+
 def main():
     # Initialize session state variables
     initialize_session_state()
+
+    hide_markdown_header_links()
     
     # Render sidebar
     render_sidebar()

@@ -65,8 +65,11 @@ def fetch_discover_content(topic):
     all_results = []
     for query in queries:
         try:
-            results = search_news(query)
-            all_results.extend(results)
+            results, error_message = search_news(query)
+            if error_message:
+                st.warning(f"Search warning: {error_message}")
+            if results:
+                all_results.extend(results)
         except Exception as e:
             st.error(f"Error fetching news: {str(e)}")
     
@@ -90,25 +93,23 @@ def display_discover_grid(articles):
         col_idx = i % 3
         
         with cols[col_idx]:
+            # Display title as header first, then add link separately
             st.markdown(f"### {article['title']}")
-            
+            # st.markdown(f"[View full article]({article['url']})")
+            st.markdown(f"📰 [Read the full article]({article['url']})")
+
             # Display thumbnail if available
             if 'thumbnail' in article and article['thumbnail']:
                 st.image(article['thumbnail'], use_column_width=True)
             
-            # Display snippet
+            # Display snippet as caption
             if 'content' in article:
-                st.markdown(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
-            
-            # Display URL and search button
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                st.markdown(f"[Read More]({article['url']})")
-            with col2:
-                if st.button("Search This", key=f"search_{i}", use_container_width=True):
-                    # Set up a search query based on the article
-                    st.session_state.search_query = f"Summarize: {article['title']}"
-                    st.session_state.current_tab = "search"
-                    st.rerun()
+                st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
+
+            if st.button("Explore this story", key=f"search_{i}", use_container_width=True):
+                # Set up a search query based on the article
+                st.session_state.search_query = f"Summarize: {article['title']}"
+                st.session_state.current_tab = "search"
+                st.rerun()
             
             st.markdown("---")

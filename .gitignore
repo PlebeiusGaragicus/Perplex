@@ -4,6 +4,7 @@ venv/
 
 Perplexica/
 
+*.db
 .env
 
 # windsurf rules
