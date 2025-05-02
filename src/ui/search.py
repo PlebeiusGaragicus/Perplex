@@ -82,7 +82,30 @@ def render_search_interface():
     # Use chat_input at the bottom of the page (it will automatically appear at the bottom)
     query = st.chat_input(placeholder_text)
     
-    # Process search query when submitted via chat_input
+    # Check if we have a URL query parameter that needs processing
+    if hasattr(st.session_state, 'url_search_query') and st.session_state.url_search_query:
+        # Use the query from the URL
+        query = st.session_state.url_search_query
+        
+        # Clear the URL query to prevent reprocessing
+        st.session_state.url_search_query = None
+        
+        # Display the query that was processed from the URL
+        st.info(f"Processing search query from URL: {query}")
+    
+    # Check if we have a search query from the discover tab or elsewhere in the session state
+    elif "search_query" in st.session_state and st.session_state.search_query:
+        # Use the query from session state
+        query = st.session_state.search_query
+        
+        # Clear the session state query to prevent reprocessing
+        temp_query = st.session_state.search_query
+        st.session_state.search_query = None
+        
+        # Display the query that was processed
+        st.info(f"Processing search query: {temp_query}")
+    
+    # Process search query when submitted via chat_input or from URL
     if query:
         
         with st.spinner("Searching..."):

@@ -93,11 +93,9 @@ def display_discover_grid(articles):
         col_idx = i % 3
         
         with cols[col_idx]:
-            # Display title as header first, then add link separately
+            # Display title as header
             st.markdown(f"### {article['title']}")
-            # st.markdown(f"[View full article]({article['url']})")
-            st.markdown(f"📰 [Read the full article]({article['url']})")
-
+            
             # Display thumbnail if available
             if 'thumbnail' in article and article['thumbnail']:
                 st.image(article['thumbnail'], use_column_width=True)
@@ -105,10 +103,18 @@ def display_discover_grid(articles):
             # Display snippet as caption
             if 'content' in article:
                 st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
+                
+            # Use Streamlit's built-in link_button for better compatibility
+            st.link_button("Read the full article", article['url'], type="secondary", icon="🔗")
 
             if st.button("Explore this story", key=f"search_{i}", use_container_width=True):
                 # Set up a search query based on the article
-                st.session_state.search_query = f"Summarize: {article['title']}"
+                st.session_state.search_query = f"Summarize: {article['url']}"
+                
+                # Clear the active conversation to start a new one
+                st.session_state.active_conversation_id = None
+                
+                # Switch to search tab
                 st.session_state.current_tab = "search"
                 st.rerun()
             

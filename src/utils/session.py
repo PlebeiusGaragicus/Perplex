@@ -1,4 +1,5 @@
 import streamlit as st
+import urllib.parse
 from src.utils.config import load_config
 
 def initialize_session_state():
@@ -24,7 +25,38 @@ def initialize_session_state():
     # Initialize conversation history
     if "conversation_history" not in st.session_state:
         st.session_state.conversation_history = []
+        
+    # Initialize active conversation ID
+    if "active_conversation_id" not in st.session_state:
+        st.session_state.active_conversation_id = None
     
     # Initialize discover results cache
     if "discover_results" not in st.session_state:
         st.session_state.discover_results = None
+        
+    # Handle URL query parameters for search engine functionality
+    if "url_params_processed" not in st.session_state:
+        st.session_state.url_params_processed = False
+        
+    # Check for query parameters only once per session
+    if not st.session_state.url_params_processed:
+        # Get query parameters from URL
+        query_params = st.query_params
+        
+        # Check if there's a search query in the URL
+        if "q" in query_params:
+            # Get the search query from URL
+            search_query = query_params.get("q")
+            
+            # Store the query in session state for processing
+            st.session_state.url_search_query = search_query
+            
+            # Ensure we're on the search tab
+            st.session_state.current_tab = "search"
+            
+            # Mark as processed to avoid reprocessing on subsequent reruns
+            st.session_state.url_params_processed = True
+        else:
+            # No query parameters, mark as processed
+            st.session_state.url_params_processed = True
+            st.session_state.url_search_query = None
