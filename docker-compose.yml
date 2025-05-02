@@ -14,7 +14,12 @@ services:
       # Map local files to the container for live updates (useful for development)
       # TODO: should this be removed for production?  Likely...
       - ./src:/app/src
-
+      - ./.streamlit:/app/.streamlit
+      - ./static:/app/static
+      - ./app.py:/app/app.py
+      - ./.env:/app/.env
+      - ./data:/app/data
+    
     # Use Docker's internal networking to connect to SearXNG
     depends_on:
       - searxng

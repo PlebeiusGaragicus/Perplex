@@ -3,18 +3,22 @@ Search agent module for Perplex
 """
 
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 # Import the LangGraph-based agent
 from src.agents.langgraph_agent import perform_search as langgraph_search
 from src.data.searxng import perform_web_search
 from src.utils.config import load_config
+from src.data.conversation import ConversationManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def perform_search(query, focus_mode="all", copilot_mode=False):
+# Initialize the conversation manager as a module-level singleton
+conversation_manager = ConversationManager()
+
+def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=None):
     """
     Perform a search and return results
     
@@ -22,16 +26,27 @@ def perform_search(query, focus_mode="all", copilot_mode=False):
         query (str): The search query
         focus_mode (str): The focus mode for search
         copilot_mode (bool): Whether to use copilot mode
+        conversation_id (int, optional): The conversation ID for follow-up questions
         
     Returns:
-        tuple: (response, sources) where response is the AI-generated response
-               and sources is a list of sources used
+        tuple: (response, sources, conversation_id) where response is the AI-generated response,
+               sources is a list of sources used, and conversation_id is the ID of the conversation
     """
     logger.info(f"Performing search for: {query} with focus_mode={focus_mode} and copilot_mode={copilot_mode}")
     
+    # Get conversation history if this is a follow-up question
+    conversation_history = None
+    if conversation_id:
+        logger.info(f"This is a follow-up question in conversation {conversation_id}")
+        conversation_history = conversation_manager.get_conversation_history(conversation_id)
+    else:
+        # Create a new conversation
+        conversation_id = conversation_manager.create_conversation(f"Search: {query[:50]}")
+        logger.info(f"Created new conversation with ID {conversation_id}")
+    
     try:
-        # Use the LangGraph-based agent for search
-        result = langgraph_search(query, focus_mode)
+        # Use the LangGraph-based agent for search with conversation history
+        result = langgraph_search(query, focus_mode, conversation_id, conversation_history)
         
         # If there's an error in the LangGraph agent, log it
         if result.get("error"):
@@ -50,10 +65,18 @@ def perform_search(query, focus_mode="all", copilot_mode=False):
                     url = res.get("url", "No URL")
                     fallback_response += f"[{i+1}] {title}\n{content}\nSource: {url}\n\n"
                 
-                return fallback_response, result.get("search_results")
+                # Store the user query and fallback response in the conversation history
+                conversation_manager.add_message(conversation_id, "user", query)
+                conversation_manager.add_message(conversation_id, "assistant", fallback_response)
+                
+                return fallback_response, result.get("search_results"), conversation_id
         
-        # Return the answer and search results
-        return result.get("answer"), result.get("search_results")
+        # Store the user query and AI response in the conversation history
+        conversation_manager.add_message(conversation_id, "user", query)
+        conversation_manager.add_message(conversation_id, "assistant", result.get("answer", ""))
+        
+        # Return the answer, search results, and conversation ID
+        return result.get("answer"), result.get("search_results"), conversation_id
         
     except Exception as e:
         logger.error(f"Error in search agent: {str(e)}")
@@ -68,7 +91,11 @@ def perform_search(query, focus_mode="all", copilot_mode=False):
             results = perform_web_search(query, searxng_url, focus_mode)
             
             if not results:
-                return "I couldn't find any results for your query. Please try a different search term or focus mode.", []
+                error_message = "I couldn't find any results for your query. Please try a different search term or focus mode."
+                # Store the user query and error message in the conversation history
+                conversation_manager.add_message(conversation_id, "user", query)
+                conversation_manager.add_message(conversation_id, "assistant", error_message)
+                return error_message, [], conversation_id
             
             # Create a simple fallback response
             fallback_response = f"Here are the search results for: {query}\n\n"
@@ -81,8 +108,18 @@ def perform_search(query, focus_mode="all", copilot_mode=False):
                 url = result.get("url", "No URL")
                 fallback_response += f"[{i+1}] {title}\n{content}\nSource: {url}\n\n"
             
-            return fallback_response, results
+            # Store the user query and fallback response in the conversation history
+            conversation_manager.add_message(conversation_id, "user", query)
+            conversation_manager.add_message(conversation_id, "assistant", fallback_response)
+            
+            return fallback_response, results, conversation_id
             
         except Exception as inner_e:
             logger.error(f"Fallback search also failed: {str(inner_e)}")
-            return f"Search failed: {str(e)}. Fallback also failed: {str(inner_e)}", []
+            error_message = f"Search failed: {str(e)}. Fallback also failed: {str(inner_e)}"
+            
+            # Store the user query and error message in the conversation history
+            conversation_manager.add_message(conversation_id, "user", query)
+            conversation_manager.add_message(conversation_id, "assistant", error_message)
+            
+            return error_message, [], conversation_id

@@ -27,12 +27,14 @@ class AgentState(BaseModel):
     steps_taken: List[str] = Field(default_factory=list, description="Steps taken by the agent")
 
 # Create a simpler search function that doesn't use LangGraph
-def perform_search(query: str, focus_mode: str = "all") -> Dict[str, Any]:
+def perform_search(query: str, focus_mode: str = "all", conversation_id: Optional[int] = None, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
     """Perform a search using a sequential approach instead of LangGraph
     
     Args:
         query (str): The search query
         focus_mode (str): The focus mode for search
+        conversation_id (Optional[int]): The conversation ID if this is part of a conversation
+        conversation_history (Optional[List[Dict[str, str]]]): Previous conversation history
         
     Returns:
         Dict[str, Any]: The search results and answer
@@ -85,18 +87,41 @@ def perform_search(query: str, focus_mode: str = "all") -> Dict[str, Any]:
         Always include citations in your answer using the format [1], [2], etc. that refer to the numbered search results.
         If the search results don't contain enough information to answer the question, say so clearly."""
         
-        # Create user prompt
-        user_prompt = f"""Question: {query}
+        # Create messages list for the chat
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ]
         
-        Search Results:
-        {formatted_results}
+        # Add conversation history if available
+        if conversation_history:
+            # Add previous conversation messages
+            messages.extend(conversation_history)
+            
+            # For a follow-up question, we need to provide context
+            user_prompt = f"""Follow-up Question: {query}
+            
+            Search Results:
+            {formatted_results}
+            
+            Please provide a comprehensive answer to this follow-up question based on these search results.
+            Include citations to the relevant sources using the format [1], [2], etc.
+            Remember to consider the conversation history for context."""
+        else:
+            # Initial question
+            user_prompt = f"""Question: {query}
+            
+            Search Results:
+            {formatted_results}
+            
+            Please provide a comprehensive answer to the question based on these search results.
+            Include citations to the relevant sources using the format [1], [2], etc."""
         
-        Please provide a comprehensive answer to the question based on these search results.
-        Include citations to the relevant sources using the format [1], [2], etc."""
+        # Add the current user query with search results
+        messages.append({"role": "user", "content": user_prompt})
         
         # Get Ollama config
         ollama_url = config.get("ollama", {}).get("base_url", "http://host.docker.internal:11434")
-        model = config.get("ollama", {}).get("default_model", "llama3")
+        model = config.get("ollama", {}).get("default_model", "phi4-mini:3.8b-q8_0")
         
         # Generate response
         logger.info(f"Calling Ollama at {ollama_url} with model {model}")
@@ -107,10 +132,7 @@ def perform_search(query: str, focus_mode: str = "all") -> Dict[str, Any]:
         # Use the client to make the chat request
         response = client.chat(
             model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+            messages=messages,
             options={"temperature": 0.7}
         )
         

@@ -57,10 +57,10 @@ def render_sidebar():
                 st.info("Copilot mode performs multi-hop searches to find more relevant information.")
         
         # Footer
-        st.markdown("---")
-        st.markdown("### About")
-        st.markdown("""
-        Perplexica is an open-source AI-powered search tool that dives deep into the internet to find precise answers.
+        # st.markdown("---")
+        # st.markdown("### About")
+        # st.markdown("""
+        # Perplexica is an open-source AI-powered search tool that dives deep into the internet to find precise answers.
         
-        [GitHub](https://github.com/ItzCrazyKns/Perplexica)
-        """)
+        # [GitHub](https://github.com/ItzCrazyKns/Perplexica)
+        # """)
