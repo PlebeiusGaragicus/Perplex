@@ -136,3 +136,48 @@ def search_news(query, num_results=10):
     engines = ["bing news", "google news"]
     
     return search_searxng(query, engines=engines, num_results=num_results)
+
+def perform_web_search(query, searxng_url=None, focus_mode="all", num_results=10):
+    """
+    Performs a web search based on the query and focus mode
+    
+    Args:
+        query (str): The search query
+        searxng_url (str): The URL of the SearXNG instance
+        focus_mode (str): The focus mode to use for the search
+        num_results (int): Number of results to return
+        
+    Returns:
+        list: List of search results
+    """
+    # Define search engines based on focus mode
+    engines = {
+        "all": ["google", "bing", "duckduckgo"],
+        "writing": ["google", "bing"],
+        "academic": ["google scholar", "semantic scholar", "base"],
+        "youtube": ["youtube"],
+        "wolfram": ["wolfram alpha"],
+        "reddit": ["reddit"]
+    }
+    
+    # Get search results based on focus mode
+    if focus_mode in engines:
+        selected_engines = engines[focus_mode]
+    else:
+        # Default to all engines
+        selected_engines = engines["all"]
+    
+    # Parse the URL
+    if searxng_url:
+        # Use the provided URL
+        config = load_config()
+        config["searxng"] = {"url": searxng_url}
+    
+    # Perform the search
+    results = search_searxng(query, engines=selected_engines, num_results=num_results)
+    
+    # If no results found, try a more general search
+    if not results and focus_mode != "all":
+        results = search_searxng(query, engines=engines["all"], num_results=num_results)
+    
+    return results

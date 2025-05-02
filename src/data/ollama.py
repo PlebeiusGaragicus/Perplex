@@ -40,23 +40,38 @@ def generate_response(prompt, model=None, system_prompt=None, temperature=0.7, m
         payload["system"] = system_prompt
     
     try:
-        # Make request
-        response = httpx.post(api_url, json=payload)
+        print(f"\n[DEBUG] Calling Ollama at: {api_url}")
+        print(f"[DEBUG] Using model: {model}")
+        print(f"[DEBUG] Payload: {payload}")
+        
+        # Make request with increased timeout
+        response = httpx.post(api_url, json=payload, timeout=30.0)
         
         # Check for errors
         if response.status_code != 200:
-            print(f"Ollama error: {response.status_code} - {response.text}")
-            return "Error generating response. Please try again."
+            print(f"[ERROR] Ollama error: {response.status_code} - {response.text}")
+            return f"Error generating response. Status code: {response.status_code}. Please ensure Ollama is running and accessible at {ollama_url}."
         
         # Parse response
+        print(f"[DEBUG] Received response from Ollama with status code: {response.status_code}")
         data = response.json()
         
         # Return generated text
         return data.get("response", "")
     
+    except (httpx.ReadTimeout, httpx.ConnectTimeout):
+        error_msg = f"Timeout connecting to Ollama at {ollama_url}. Please ensure Ollama is running and accessible."
+        print(f"[ERROR] {error_msg}")
+        return error_msg
+    except httpx.ConnectError as e:
+        error_msg = f"Connection error to Ollama at {ollama_url}: {str(e)}. Please ensure Ollama is running and accessible."
+        print(f"[ERROR] {error_msg}")
+        return error_msg
     except Exception as e:
-        print(f"Error calling Ollama: {str(e)}")
-        return "Error generating response. Please try again."
+        import traceback
+        print(f"[ERROR] Error calling Ollama: {str(e)}")
+        print(f"[DEBUG] Exception details: {traceback.format_exc()}")
+        return f"Error calling Ollama: {str(e)}. Please ensure Ollama is running and accessible at {ollama_url}."
 
 def summarize_search_results(query, results, focus_mode="all"):
     """

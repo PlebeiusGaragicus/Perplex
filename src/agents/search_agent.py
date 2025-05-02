@@ -1,65 +1,88 @@
-import streamlit as st
-from src.data.searxng import search_searxng, search_news
-from src.data.ollama import summarize_search_results
+"""
+Search agent module for Perplex
+"""
+
+import logging
+from typing import Dict, List, Any, Optional
+
+# Import the LangGraph-based agent
+from src.agents.langgraph_agent import perform_search as langgraph_search
+from src.data.searxng import perform_web_search
 from src.utils.config import load_config
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def perform_search(query, focus_mode="all", copilot_mode=False):
     """
-    Performs a search based on the query and focus mode
+    Perform a search and return results
     
     Args:
         query (str): The search query
-        focus_mode (str): The focus mode to use for the search
+        focus_mode (str): The focus mode for search
         copilot_mode (bool): Whether to use copilot mode
         
     Returns:
         tuple: (response, sources) where response is the AI-generated response
                and sources is a list of sources used
     """
-    config = load_config()
-    num_results = config.get("search", {}).get("num_results", 10)
+    logger.info(f"Performing search for: {query} with focus_mode={focus_mode} and copilot_mode={copilot_mode}")
     
-    # Define search engines based on focus mode
-    engines = {
-        "all": ["google", "bing", "duckduckgo"],
-        "writing": ["google", "bing"],
-        "academic": ["google scholar", "semantic scholar", "base"],
-        "youtube": ["youtube"],
-        "wolfram": ["wolfram alpha"],
-        "reddit": ["reddit"]
-    }
-    
-    # Get search results based on focus mode
-    if focus_mode == "all":
-        results = search_searxng(query, engines=engines["all"], num_results=num_results)
-    elif focus_mode == "writing":
-        # For writing, we'll use general search but the AI will focus on writing assistance
-        results = search_searxng(query, engines=engines["writing"], num_results=num_results)
-    elif focus_mode == "academic":
-        results = search_searxng(query, engines=engines["academic"], num_results=num_results)
-    elif focus_mode == "youtube":
-        results = search_searxng(query, engines=engines["youtube"], num_results=num_results)
-    elif focus_mode == "wolfram":
-        results = search_searxng(query, engines=engines["wolfram"], num_results=num_results)
-    elif focus_mode == "reddit":
-        results = search_searxng(query, engines=engines["reddit"], num_results=num_results)
-    else:
-        # Default to all engines
-        results = search_searxng(query, num_results=num_results)
-    
-    # If no results found, try a more general search
-    if not results and focus_mode != "all":
-        results = search_searxng(query, engines=engines["all"], num_results=num_results)
-    
-    # If still no results, return an error message
-    if not results:
-        return "I couldn't find any results for your query. Please try a different search term or focus mode.", []
-    
-    # If in copilot mode, generate a response using Ollama
-    if copilot_mode:
-        response = summarize_search_results(query, results, focus_mode)
-    else:
-        # In regular mode, just return a simple response with the search results
-        response = f"Here are the search results for: {query}"
-    
-    return response, results
+    try:
+        # Use the LangGraph-based agent for search
+        result = langgraph_search(query, focus_mode)
+        
+        # If there's an error in the LangGraph agent, log it
+        if result.get("error"):
+            logger.warning(f"LangGraph agent error: {result.get('error')}")
+            
+            # If we have search results but no answer, create a fallback response
+            if result.get("search_results") and not result.get("answer"):
+                fallback_response = f"Here are the search results for: {query}\n\n"
+                fallback_response += "I couldn't generate an AI summary because of an error. "
+                fallback_response += f"Error: {result.get('error')}\n\n"
+                
+                # Add search results to the fallback response
+                for i, res in enumerate(result.get("search_results")):
+                    title = res.get("title", "No title")
+                    content = res.get("content", "No content")
+                    url = res.get("url", "No URL")
+                    fallback_response += f"[{i+1}] {title}\n{content}\nSource: {url}\n\n"
+                
+                return fallback_response, result.get("search_results")
+        
+        # Return the answer and search results
+        return result.get("answer"), result.get("search_results")
+        
+    except Exception as e:
+        logger.error(f"Error in search agent: {str(e)}")
+        
+        # Fallback to direct search if LangGraph agent fails
+        try:
+            # Get config
+            config = load_config()
+            searxng_url = config.get("searxng", {}).get("url", "http://searxng:8080")
+            
+            # Perform direct search
+            results = perform_web_search(query, searxng_url, focus_mode)
+            
+            if not results:
+                return "I couldn't find any results for your query. Please try a different search term or focus mode.", []
+            
+            # Create a simple fallback response
+            fallback_response = f"Here are the search results for: {query}\n\n"
+            fallback_response += "I encountered an error when trying to generate an AI response. "
+            fallback_response += f"Error: {str(e)}\n\n"
+            
+            for i, result in enumerate(results):
+                title = result.get("title", "No title")
+                content = result.get("content", "No content")
+                url = result.get("url", "No URL")
+                fallback_response += f"[{i+1}] {title}\n{content}\nSource: {url}\n\n"
+            
+            return fallback_response, results
+            
+        except Exception as inner_e:
+            logger.error(f"Fallback search also failed: {str(inner_e)}")
+            return f"Search failed: {str(e)}. Fallback also failed: {str(inner_e)}", []

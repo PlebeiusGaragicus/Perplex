@@ -44,8 +44,8 @@ def render_llm_settings(config):
     # Ollama base URL
     ollama_base_url = st.text_input(
         "Ollama Base URL",
-        value=config.get("ollama", {}).get("base_url", "http://localhost:11434"),
-        help="The base URL for your Ollama instance"
+        value=config.get("ollama", {}).get("base_url", "http://host.docker.internal:11434"),
+        help="The base URL for your Ollama instance (use host.docker.internal to access host from Docker)"
     )
     
     # Available models
@@ -91,8 +91,8 @@ def render_search_settings(config):
     # SearXNG URL
     searxng_url = st.text_input(
         "SearXNG URL",
-        value=config.get("searxng", {}).get("url", "http://localhost:8080"),
-        help="The URL for your SearXNG instance"
+        value=config.get("searxng", {}).get("url", "http://searxng:8080"),
+        help="The URL for your SearXNG instance (use searxng:8080 for the Docker container)"
     )
     
     # Update config

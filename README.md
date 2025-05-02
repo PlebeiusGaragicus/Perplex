@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document provides detailed implementation guidance for Perplexica as a Python Streamlit application. It focuses on creating a fully local, self-hosted solution using LangGraph and Ollama, with SearXNG integration for web searches.
+This document provides detailed implementation guidance for Perplexica as a Python Streamlit application. It focuses on creating a fully local, self-hosted solution using Streamlit and Ollama, with SearXNG integration for web searches. Both Streamlit and SearXNG are containerized within Docker for easy deployment.
 
 ## System Requirements
 
@@ -65,8 +65,72 @@ perplexica/
 
 ### Key Components
 
-1. **FastAPI Application**: Replaces Next.js API routes
-2. **MetaSearchAgent**: Core component for search and answer generation
+1. **Streamlit Application**: Replaces Next.js frontend
+2. **Search Agent**: Core component for search and answer generation
 3. **SearXNG Integration**: For web search functionality
-4. **LLM Integration**: Using LangChain's abstractions
-5. **Database Models**: Using SQLAlchemy ORM
+4. **Ollama Integration**: For local LLM inference
+5. **SQLite Database**: For storing search history and user preferences
+
+## Development Plan
+
+### Core Features to Implement
+
+1. **Web Search Functionality**
+   - SearXNG integration for web searches ✅
+   - Result ranking and relevance sorting
+   - Source citation and attribution
+   - Error handling and fallback mechanisms
+
+2. **AI-Powered Answer Generation**
+   - Ollama integration for local LLM inference ✅
+   - Context-aware response generation
+   - Source summarization and synthesis
+   - Citation linking to original sources
+
+3. **Focus Modes**
+   - All Web Search (default) ✅
+   - Writing Assistant - SKIP FOR NOW
+   - Academic Search - SKIP FOR NOW
+   - YouTube Search - SKIP FOR NOW
+   - Wolfram Alpha - SKIP FOR NOW
+   - Reddit Search - SKIP FOR NOW
+
+4. **User Interface**
+   - Search interface with query input ✅
+   - Results display with expandable sources ✅
+   - Focus mode selection - SKIP FOR NOW
+   - Settings configuration
+   - Conversation history display ✅
+
+5. **History and Session Management**
+   - Search history storage in SQLite ✅
+   - Session state management ✅
+   - History export and clearing
+
+6. **Advanced Features**
+   - Copilot mode for multi-hop searches
+   - Image and video search capabilities
+   - Discover tab for exploring trending topics
+   - API endpoints for external integration
+
+### Implementation Progress
+
+- ✅ Basic Streamlit app structure
+- ✅ SearXNG integration for web search
+- ✅ Ollama integration for LLM inference
+- ✅ Search interface with query input
+- ✅ Basic conversation history display
+- ✅ SQLite database for history storage
+- ✅ Settings page
+- ✅ Discover tab
+- ⬜ API endpoints
+- ⬜ Copilot mode implementation
+
+### Technical Debt and Considerations
+
+- Docker networking for accessing Ollama on the host machine
+- Error handling and graceful degradation
+- Performance optimization for search and inference
+- Security considerations for user data
+- Accessibility and responsive design
+- SearXNG configuration and customization

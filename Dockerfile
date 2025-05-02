@@ -2,8 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Ensure host.docker.internal is available for Mac and Linux
-RUN echo "127.0.0.1 host.docker.internal" >> /etc/hosts || true
+# Docker will handle host.docker.internal mapping
 
 RUN apt-get update && apt-get install -y \
     build-essential \

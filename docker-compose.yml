@@ -15,9 +15,9 @@ services:
       # TODO: should this be removed for production?  Likely...
       - ./src:/app/src
 
-    # Add extra hosts to allow Docker to access Wireguard network
-    extra_hosts:
-      - "wireguard:10.10.10.10"
+    # Use Docker's internal networking to connect to SearXNG
+    depends_on:
+      - searxng
     
     environment:
       # Avoid output buffering; this line ensures that print() statements are sent directly to the terminal
@@ -26,8 +26,12 @@ services:
       - DEBUG=${DEBUG:-0}
       - APP_NAME=${APP_NAME:?Your .env file must have a APP_NAME variable}
       # Service URLs for connecting to services
-      - SEARXNG_URL=http://wireguard:4001
+      - SEARXNG_URL=http://searxng:8080
       - OLLAMA_URL=http://host.docker.internal:11434
+      
+    # Add extra hosts to allow Docker to access host machine services on all platforms
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:${STREAMLIT_PORT}/_stcore/health"]
@@ -39,3 +43,17 @@ services:
 
     command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
     # command: ["streamlit", "run", "run_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--logger.level=debug"]
+
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+
+    container_name: searxng
+
+    volumes:
+      - ./searxng:/etc/searxng:rw
+
+    ports:
+      - 4001:8080
+
+    restart: unless-stopped

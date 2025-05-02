@@ -69,7 +69,7 @@ def override_with_env_vars(config):
     else:
         # Default SearXNG URL if not in environment
         if "url" not in config["searxng"]:
-            config["searxng"]["url"] = "http://10.10.10.10:4001"
+            config["searxng"]["url"] = "http://searxng:8080"
             
     if os.getenv(ENV_OLLAMA_URL):
         ollama_url = os.getenv(ENV_OLLAMA_URL)
