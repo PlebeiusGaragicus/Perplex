@@ -27,13 +27,13 @@ def render_sidebar():
         
         # Conversation history section
         st.markdown("---")
-        st.subheader("Conversations")
+        st.subheader("History")
         
         # Initialize conversation manager
         conversation_manager = ConversationManager()
         
         # New conversation button at the top
-        if st.button("+ New Conversation", use_container_width=True, type="primary"):
+        if st.button("New thread", use_container_width=True, type="secondary", icon="🌱"):
             st.session_state.active_conversation_id = None
             st.rerun()
         
@@ -42,7 +42,7 @@ def render_sidebar():
         
         # Display conversations as buttons
         if conversations:
-            st.divider()
+            # st.divider()
             for conv in conversations:
                 # Get the first user message to use as the button label
                 messages = conversation_manager.get_conversation_messages(conv['id'])

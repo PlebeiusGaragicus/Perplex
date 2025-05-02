@@ -23,7 +23,7 @@ def load_config():
             "ollama": {
                 # "base_url": "http://10.10.10.10:11434",
                 "base_url": "http://host.docker.internal:11434",
-                "default_model": "llama3.1:8b"
+                "default_model": "phi4:14b-q8_0"
             },
             "searxng": {
                 "url": "http://10.10.10.10:4001"
@@ -70,7 +70,7 @@ def override_with_env_vars(config):
         # Default SearXNG URL if not in environment
         if "url" not in config["searxng"]:
             config["searxng"]["url"] = "http://searxng:8080"
-            
+
     if os.getenv(ENV_OLLAMA_URL):
         ollama_url = os.getenv(ENV_OLLAMA_URL)
         print(f"Using Ollama URL from environment: {ollama_url}")
@@ -80,7 +80,7 @@ def override_with_env_vars(config):
         if "base_url" not in config["ollama"]:
             config["ollama"]["base_url"] = "http://127.0.0.1:11434"
         if "default_model" not in config["ollama"]:
-            config["ollama"]["default_model"] = "llama3.1:8b"
+            config["ollama"]["default_model"] = "phi4:14b-q8_0"
             
     return config
 

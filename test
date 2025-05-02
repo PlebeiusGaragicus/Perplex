@@ -1,5 +1,5 @@
 #!/bin/bash
-# docker compose -f docker-compose.yml --env-file .env up --build
+# COMPOSE_BAKE=true docker compose -f docker-compose.yml --env-file .env up --build
 
 
 # Trap SIGINT (Ctrl-C) to bring down the container when exiting
@@ -11,7 +11,7 @@ cleanup() {
 }
 
 echo "Starting and building Docker containers..."
-docker compose -f docker-compose.yml --env-file .env up --build -d
+COMPOSE_BAKE=true docker compose -f docker-compose.yml --env-file .env up --build -d
 
 # Display logs
 echo

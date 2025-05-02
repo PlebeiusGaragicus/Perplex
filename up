@@ -1,0 +1,6 @@
+#!/bin/bash
+echo
+echo "COMPOSE_BAKE=true docker compose -f docker-compose.yml --env-file .env up -d"
+echo
+
+COMPOSE_BAKE=true docker compose -f docker-compose.yml --env-file .env up -d

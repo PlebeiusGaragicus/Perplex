@@ -136,7 +136,7 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
         
         # Get Ollama config
         ollama_url = config.get("ollama", {}).get("base_url", "http://host.docker.internal:11434")
-        model = config.get("ollama", {}).get("default_model", "llama3.1:8b")
+        model = config.get("ollama", {}).get("default_model", "phi4:14b-q8_0")
         
         # Generate response
         logger.info(f"Calling Ollama at {ollama_url} with model {model}")

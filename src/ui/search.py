@@ -105,6 +105,12 @@ def render_search_interface():
         # Display the query that was processed
         st.info(f"Processing search query: {temp_query}")
     
+    # Immediately display the query when submitted via chat_input
+    elif query:
+        # Display the query that was just submitted
+        with st.chat_message("user"):
+            st.markdown(query)
+    
     # Process search query when submitted via chat_input or from URL
     if query:
         
@@ -135,16 +141,16 @@ def display_conversation_history(conversation_manager):
         conversation_manager (ConversationManager): The conversation manager instance
     """
     # If no active conversation, show a prompt to start
-    if st.session_state.active_conversation_id is None:
-        st.info("Ask a question to get started!")
-        return
+    # if st.session_state.active_conversation_id is None:
+    #     st.info("Ask a question to get started!")
+    #     return
     
     # Get messages for the active conversation
     messages = conversation_manager.get_conversation_messages(st.session_state.active_conversation_id)
     
-    if not messages:
-        st.info("Ask a question to get started!")
-        return
+    # if not messages:
+    #     st.info("Ask a question to get started!")
+    #     return
     
     # Group messages by user/assistant pairs
     i = 0
@@ -163,12 +169,14 @@ def display_conversation_history(conversation_manager):
                 # Display sources if available
                 if 'sources' in messages[i] and messages[i]['sources']:
                     sources = messages[i]['sources']
-                    with st.expander(f"Sources ({len(sources)})"):
-                        for j, source in enumerate(sources):
-                            st.markdown(f"**[{j+1}] {source['title']}**")
-                            if source['url']:
-                                st.markdown(f"[{source['url']}]({source['url']})")
-                            if source['content']:
-                                st.markdown(f"_{source['content']}_")
-                            st.divider()
+                    st.divider()
+                    # with st.expander(f"Sources ({len(sources)})"):
+                    for j, source in enumerate(sources):
+                        # st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
+                        st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
+                        # if source['url']:
+                        #     st.markdown(f"Article: <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
+                        # if source['content']:
+                        #     st.caption(source['content'])
+                        # st.divider()
             i += 1
