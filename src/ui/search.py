@@ -90,6 +90,9 @@ def render_search_interface():
         # Display the query that was processed from the URL
         st.info(f"Processing search query from URL: {query}")
     
+        # clear the params so that a page refresh doesn't re-trigger the search
+        st.query_params.clear()
+
     # Check if we have a search query from the discover tab or elsewhere in the session state
     elif "search_query" in st.session_state and st.session_state.search_query:
         # Use the query from session state
