@@ -1,10 +1,11 @@
 import streamlit as st
 from src.utils.config import save_config, load_config
 from src.ui.common import center_text
+from src.data.ollama import get_available_models
 
 def render_settings():
     """
-    Renders the settings page for Perplexica
+    Renders the settings page for Perplexed
     """
     center_text(type="h1", text="Settings")
     
@@ -48,12 +49,28 @@ def render_llm_settings(config):
         help="The base URL for your Ollama instance (use host.docker.internal to access host from Docker)"
     )
     
-    # Available models
-    ollama_models = ["llama3", "llama3:8b", "llama3:70b", "mistral", "mixtral", "phi3"]
+    # Query available models from Ollama
+    ollama_models, error_message = get_available_models()
+    
+    # Stop the app if we couldn't get the list of models
+    if not ollama_models:
+        st.error(f"Could not fetch models from Ollama: {error_message}")
+        st.error("Please ensure Ollama is running and accessible, then refresh this page.")
+        st.stop()
+    
+    # Get current default model
+    current_default = config.get("ollama", {}).get("default_model", "")
+    
+    # Find index of current default model, or use 0 if not found
+    try:
+        default_index = ollama_models.index(current_default)
+    except ValueError:
+        default_index = 0
+        
     selected_model = st.selectbox(
         "Default Ollama Model",
         options=ollama_models,
-        index=ollama_models.index(config.get("ollama", {}).get("default_model", "llama3")) if config.get("ollama", {}).get("default_model") in ollama_models else 0,
+        index=default_index,
         help="The default Ollama model to use for queries"
     )
     
@@ -167,7 +184,7 @@ def render_app_settings(config):
     # Database path
     db_path = st.text_input(
         "SQLite Database Path",
-        value=config.get("database", {}).get("path", "data/perplexica.db"),
+        value=config.get("database", {}).get("path", "data/perplexed.db"),
         help="The path to the SQLite database file"
     )
     

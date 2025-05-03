@@ -7,12 +7,16 @@ from src.ui.discover import render_discover_tab
 from src.ui.settings import render_settings
 from src.utils.session import initialize_session_state
 
+from src.ui.common import cprint, Colors
+# cprint(f"RUNNING for: {ip_addr} - {lang} - {user_agent}", Colors.YELLOW)
+cprint(f"RUNNING...", Colors.YELLOW)
+
 # Load environment variables
 load_dotenv()
 
 # Set page configuration
 st.set_page_config(
-    page_title="Perplexica",
+    page_title="Perplexed",
     page_icon="🔎",
     layout="wide",
     initial_sidebar_state="auto"
@@ -57,4 +61,14 @@ def main():
         render_settings()
 
 if __name__ == "__main__":
+    # import logging
+    # logging.getLogger("fsevents").setLevel(logging.WARNING)
+    # logging.getLogger("PIL").setLevel(logging.WARNING)
+    # logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
+    # logging.getLogger("openai._base_client").setLevel(logging.WARNING)
+    # logging.getLogger("httpx").setLevel(logging.WARNING)
+    # logging.getLogger("langsmith.client").setLevel(logging.WARNING)
+    # logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+    # logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+
     main()

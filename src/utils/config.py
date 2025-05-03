@@ -1,8 +1,10 @@
 import os
 import json
-from pathlib import Path
+import pathlib
 
-CONFIG_FILE = "config.json"
+ASSETS_PATH = pathlib.Path(__file__).parent.parent / "static"
+
+CONFIG_FILE = "data/config.json"
 
 # Environment variable names
 ENV_SEARXNG_URL = "SEARXNG_URL"
@@ -15,7 +17,7 @@ def load_config():
     Returns:
         dict: The configuration dictionary
     """
-    config_path = Path(CONFIG_FILE)
+    config_path = pathlib.Path(CONFIG_FILE)
     
     # Create default config if it doesn't exist
     if not config_path.exists():
@@ -34,7 +36,7 @@ def load_config():
                 "default_focus_mode": "all"
             },
             "database": {
-                "path": "data/perplexica.db"
+                "path": "data/perplexed.db"
             },
             "history": {
                 "enabled": True,
@@ -92,7 +94,13 @@ def save_config(config):
         config (dict): The configuration dictionary
     """
     try:
-        with open(CONFIG_FILE, 'w') as f:
+        # Ensure the directory exists
+        config_path = pathlib.Path(CONFIG_FILE)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Save the config file
+        with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
+        print(f"Config saved to {config_path}")
     except Exception as e:
         print(f"Error saving config: {str(e)}")

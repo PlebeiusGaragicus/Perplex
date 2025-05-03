@@ -1,8 +1,8 @@
-# Perplexica Python Implementation Guide
+# Perplexed Python Implementation Guide
 
 ## Introduction
 
-This document provides detailed implementation guidance for Perplexica as a Python Streamlit application. It focuses on creating a fully local, self-hosted solution using Streamlit and Ollama, with SearXNG integration for web searches. Both Streamlit and SearXNG are containerized within Docker for easy deployment.
+This document provides detailed implementation guidance for `Perplexed` as a Python Streamlit application. It focuses on creating a fully local, self-hosted solution using Streamlit and Ollama, with SearXNG integration for web searches. Both Streamlit and SearXNG are containerized within Docker for easy deployment.
 
 ## System Requirements
 
@@ -21,7 +21,7 @@ This document provides detailed implementation guidance for Perplexica as a Pyth
 ### Project Structure
 
 ```
-perplexica/
+perplexed/
 ├── app.py                  # Main Streamlit application entry point
 ├── requirements.txt        # Python dependencies
 ├── config.json             # Application configuration
@@ -48,7 +48,7 @@ perplexica/
 │       ├── history.py      # Search history utilities
 │       └── session.py      # Streamlit session state management
 └── data/
-    └── perplexica.db       # SQLite database
+    └── perplexed.db       # SQLite database
 │   │   ├── __init__.py
 │   │   ├── models.py             # SQLAlchemy models
 │   │   └── session.py            # Database session

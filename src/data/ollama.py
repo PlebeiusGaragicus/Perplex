@@ -1,6 +1,7 @@
 import httpx
 import json
 from src.utils.config import load_config
+from src.ui.common import cprint, Colors
 
 def generate_response(prompt, model=None, system_prompt=None, temperature=0.7, max_tokens=1024):
     """
@@ -124,3 +125,55 @@ and provide the best response you can based on the available information.
         temperature=0.5,
         max_tokens=2048
     )
+
+
+def get_available_models():
+    """
+    Gets the list of available models from Ollama
+    
+    Returns:
+        list: List of available model names
+        str: Error message if any
+    """
+    config = load_config()
+    ollama_url = config.get("ollama", {}).get("base_url", "http://localhost:11434")
+    
+    # Build API URL
+    api_url = f"{ollama_url}/api/tags"
+    
+    try:
+        cprint(f"[DEBUG] Querying Ollama models at: {api_url}", Colors.CYAN)
+        
+        # Make request with increased timeout
+        response = httpx.get(api_url, timeout=5.0)
+        
+        # Check for errors
+        if response.status_code != 200:
+            error_msg = f"Error getting models. Status code: {response.status_code}"
+            cprint(f"[ERROR] {error_msg}", Colors.RED)
+            return [], error_msg
+        
+        # Parse response
+        data = response.json()
+        models = [model["name"] for model in data.get("models", [])]
+        
+        # Sort models alphabetically
+        models.sort()
+        
+        cprint(f"[DEBUG] Found {len(models)} models: {models}", Colors.GREEN)
+        return models, None
+        
+    except (httpx.ReadTimeout, httpx.ConnectTimeout):
+        error_msg = f"Timeout connecting to Ollama at {ollama_url}"
+        cprint(f"[ERROR] {error_msg}", Colors.RED)
+        return [], error_msg
+    except httpx.ConnectError as e:
+        error_msg = f"Connection error to Ollama at {ollama_url}: {str(e)}"
+        cprint(f"[ERROR] {error_msg}", Colors.RED)
+        return [], error_msg
+    except Exception as e:
+        import traceback
+        error_msg = f"Error getting models: {str(e)}"
+        cprint(f"[ERROR] {error_msg}", Colors.RED)
+        cprint(f"[DEBUG] Exception details: {traceback.format_exc()}", Colors.RED)
+        return [], error_msg

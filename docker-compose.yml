@@ -17,7 +17,6 @@ services:
       - ./.streamlit:/app/.streamlit
       - ./static:/app/static
       - ./app.py:/app/app.py
-      - ./.env:/app/.env
       - ./data:/app/data
     
     # Use Docker's internal networking to connect to SearXNG
@@ -33,7 +32,7 @@ services:
       # Service URLs for connecting to services
       - SEARXNG_URL=http://searxng:8080
       - OLLAMA_URL=http://host.docker.internal:11434
-      
+
     # Add extra hosts to allow Docker to access host machine services on all platforms
     extra_hosts:
       - "host.docker.internal:host-gateway"

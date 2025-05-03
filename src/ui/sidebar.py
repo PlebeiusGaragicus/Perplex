@@ -1,14 +1,14 @@
 import streamlit as st
 from src.data.conversation import ConversationManager
 from src.ui.common import center_text
+from src.VERSION import VERSION
 
 def render_sidebar():
     """
-    Renders the sidebar navigation for Perplexica
+    Renders the sidebar navigation for Perplexed
     """
     with st.sidebar:
-        # st.title("🔎 Perplexica")
-        # st.markdown("---")
+        st.header("🔎 :rainbow[Perplexed]", divider="rainbow")
 
         # Navigation tabs
         if st.button("🔍 Search", use_container_width=True, 
@@ -28,7 +28,7 @@ def render_sidebar():
             st.rerun()
         
         # Conversation history section
-        st.markdown("---")
+        st.header("", divider="rainbow")
         st.title(":green[Conversation History]")
         # center_text(type="h2", text="Conversation history")
         
@@ -36,7 +36,7 @@ def render_sidebar():
         conversation_manager = ConversationManager()
         
         # New conversation button at the top
-        if st.button("New thread", use_container_width=True, type="secondary", icon="🌱"):
+        if st.button("New thread", use_container_width=True, type="tertiary", icon="🌱"):
             st.session_state.active_conversation_id = None
             st.session_state.current_tab = "search"
             st.rerun()
@@ -78,3 +78,6 @@ def render_sidebar():
                             st.rerun()
         else:
             st.info("No conversations yet")
+
+        st.header("", divider="rainbow")
+        st.caption(f"version: `{VERSION}`")

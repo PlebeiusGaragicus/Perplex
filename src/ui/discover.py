@@ -11,16 +11,17 @@ def render_discover_tab():
     center_text(type="h1", text="Discover")
     st.header("", divider="rainbow")
 
-    # Topic selection with radio buttons
-    topics = ["AI", "Technology", "Science", "Business", "Health"]
-    
 
-    selected_topic = st.radio("Topic:", topics, horizontal=True)
+    with st.container(border=True):
+        # Topic selection with radio buttons
+        topics = ["AI", "Technology", "Science", "Business", "Health"]    
 
-    if st.button("Refresh", icon="♻️"):
-        # Clear cache to refresh results
-        st.session_state.discover_results = None
-        st.rerun()
+        selected_topic = st.radio(":orange[Topic]", topics, horizontal=True)
+
+        if st.button(":green[Refresh]", icon="♻️"):
+            # Clear cache to refresh results
+            st.session_state.discover_results = None
+            st.rerun()
 
     # Get or fetch discover results
     if "discover_results" not in st.session_state or st.session_state.discover_results is None:
@@ -105,7 +106,7 @@ def display_discover_grid(articles):
                 if 'content' in article:
                     st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
 
-                if st.button("Explore this story", key=f"search_{i}", use_container_width=True, type="tertiary", icon="💬"):
+                if st.button(":green[Explore this story]", key=f"search_{i}", use_container_width=True, type="tertiary", icon="💬"):
                     # Set up a search query based on the article
                     st.session_state.search_query = f"Summarize: {article['url']}"
                     

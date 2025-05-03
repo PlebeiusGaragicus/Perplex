@@ -12,7 +12,7 @@ def get_db_connection():
         sqlite3.Connection: Database connection
     """
     config = load_config()
-    db_path = config.get("database", {}).get("path", "data/perplexica.db")
+    db_path = config.get("database", {}).get("path", "data/perplexed.db")
     
     # Ensure directory exists
     os.makedirs(os.path.dirname(db_path), exist_ok=True)

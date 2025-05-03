@@ -6,7 +6,7 @@ from src.ui.common import center_text
 def render_search_interface():
 
     """
-    Renders the main search interface for Perplexica
+    Renders the main search interface for Perplexed
     """
     # Initialize conversation manager
     conversation_manager = ConversationManager()
@@ -27,7 +27,7 @@ def render_search_interface():
         st.session_state.clear_query = False
     
     # Main content area
-    center_text(type="h1", text="Perplexity Search")
+    center_text(type="h1", text="🔎 Perplexed")
     st.header("", divider="rainbow")
 
     # Focus mode as radio buttons
@@ -37,24 +37,24 @@ def render_search_interface():
         "academic": "Academic Search"
     }
     
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        selected_focus_mode = st.radio("Search mode:", list(focus_mode_labels.values()), 
-                                     horizontal=True, 
-                                     index=list(focus_mode_labels.keys()).index(st.session_state.focus_mode))
-        # Map the selected label back to the key
-        focus_mode_key = list(focus_mode_labels.keys())[list(focus_mode_labels.values()).index(selected_focus_mode)]
-        if focus_mode_key != st.session_state.focus_mode:
-            st.session_state.focus_mode = focus_mode_key
-            st.rerun()
+    with st.container(border=True):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            # Copilot mode toggle in the main area
+            copilot_enabled = st.toggle(":blue[Copilot Mode]", value=st.session_state.copilot_mode)
+            if copilot_enabled != st.session_state.copilot_mode:
+                st.session_state.copilot_mode = copilot_enabled
+                st.rerun()
 
-    with col2:
-        # Copilot mode toggle in the main area
-        copilot_enabled = st.toggle("Copilot Mode", value=st.session_state.copilot_mode)
-        if copilot_enabled != st.session_state.copilot_mode:
-            st.session_state.copilot_mode = copilot_enabled
-            st.rerun()
+        with col2:
+            selected_focus_mode = st.radio(":orange[Search mode]", list(focus_mode_labels.values()), 
+                                        horizontal=True, 
+                                        index=list(focus_mode_labels.keys()).index(st.session_state.focus_mode))
+            # Map the selected label back to the key
+            focus_mode_key = list(focus_mode_labels.keys())[list(focus_mode_labels.values()).index(selected_focus_mode)]
+            if focus_mode_key != st.session_state.focus_mode:
+                st.session_state.focus_mode = focus_mode_key
+                st.rerun()
 
     # Update conversations in session state
     conversations = conversation_manager.get_conversations()

@@ -4,6 +4,7 @@ venv/
 
 .env
 *.db
+*.json
 
 # windsurf rules
 .windsurfrules

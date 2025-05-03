@@ -4,7 +4,7 @@ from src.utils.config import load_config
 
 def initialize_session_state():
     """
-    Initializes the session state variables for the Perplexica application
+    Initializes the session state variables for the Perplexed application
     """
     # Load configuration
     config = load_config()
