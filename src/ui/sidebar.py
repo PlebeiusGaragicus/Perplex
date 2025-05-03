@@ -48,8 +48,8 @@ def render_sidebar():
                 messages = conversation_manager.get_conversation_messages(conv['id'])
                 first_user_message = next((msg['content'] for msg in messages if msg['role'] == 'user'), "Untitled")
                 
-                # Truncate the message to 12 characters
-                button_label = first_user_message[:12] + "..." if len(first_user_message) > 12 else first_user_message
+                # Truncate the message to 20 characters
+                button_label = first_user_message[:20] + "..." if len(first_user_message) > 20 else first_user_message
                 
                 # Highlight the active conversation
                 is_active = st.session_state.active_conversation_id == conv['id']

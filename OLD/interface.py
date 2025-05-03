@@ -16,18 +16,3 @@ def column_fix():
     min-width: calc(33% - 1rem) !important;
 }
 </style>""", unsafe_allow_html=True)
-
-
-
-
-
-
-def cmp_header(APP_NAME: str):
-    favicon = Image.open(os.path.join(STATIC_PATH, "favicon.ico"))
-    st.set_page_config(
-        # page_title="DEBUG!" if os.getenv("DEBUG", False) else "NOS4A2",
-        page_title=APP_NAME,
-        page_icon=favicon,
-        layout="wide",
-        initial_sidebar_state="auto",
-    )

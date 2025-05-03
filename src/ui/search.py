@@ -113,23 +113,63 @@ def render_search_interface():
     
     # Process search query when submitted via chat_input or from URL
     if query:
+        # Create a placeholder for the assistant's response
+        assistant_placeholder = st.empty()
         
         with st.spinner("Searching..."):
-            # Perform search based on focus mode and copilot mode
-            response, sources, conversation_id = perform_search(
+            # Perform search with streaming enabled
+            result = perform_search(
                 query=query,
                 focus_mode=st.session_state.focus_mode,
                 copilot_mode=st.session_state.copilot_mode,
-                conversation_id=st.session_state.active_conversation_id
+                conversation_id=st.session_state.active_conversation_id,
+                stream=True
             )
             
-            # Update the active conversation ID
-            st.session_state.active_conversation_id = conversation_id
-            
-            # Refresh the page to show results
-            # We'll use a flag to clear the query on the next run
-            st.session_state.clear_query = True
-            st.rerun()
+            # Check if we got a streaming response (4 items in tuple) or regular response (3 items)
+            if len(result) == 4:
+                # Unpack streaming response
+                answer_generator, sources, conversation_id, message_id = result
+                
+                # Update the active conversation ID
+                st.session_state.active_conversation_id = conversation_id
+                
+                # Create a container for the assistant's response
+                with assistant_placeholder.container():
+                    with st.chat_message("assistant"):
+                        # First, display the sources if available
+                        if sources:
+                            for j, source in enumerate(sources):
+                                st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
+                        
+                        # Create a placeholder for the streaming text
+                        message_placeholder = st.empty()
+                        full_response = ""
+                        
+                        st.divider()
+                        # Stream the response
+                        for chunk, full_answer in answer_generator():
+                            if chunk:  # Only update if there's new content
+                                full_response = full_answer
+                                message_placeholder.markdown(full_response)
+                        
+                        # Update the message in the database only once after streaming is complete
+                        # Use the existing conversation_manager instance
+                        conversation_manager.update_message_content(message_id, full_response)
+                
+                # Don't rerun the page - we've already shown the response
+                st.session_state.clear_query = True
+                
+            else:
+                # Regular non-streaming response
+                response, sources, conversation_id = result
+                
+                # Update the active conversation ID
+                st.session_state.active_conversation_id = conversation_id
+                
+                # Refresh the page to show results
+                st.session_state.clear_query = True
+                st.rerun()
     
     # We've already displayed the conversation history above
 
@@ -172,11 +212,5 @@ def display_conversation_history(conversation_manager):
                     st.divider()
                     # with st.expander(f"Sources ({len(sources)})"):
                     for j, source in enumerate(sources):
-                        # st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
                         st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
-                        # if source['url']:
-                        #     st.markdown(f"Article: <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
-                        # if source['content']:
-                        #     st.caption(source['content'])
-                        # st.divider()
             i += 1

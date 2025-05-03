@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Initialize the conversation manager as a module-level singleton
 conversation_manager = ConversationManager()
 
-def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=None):
+def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=None, stream=True):
     """
     Perform a search and return results
     
@@ -46,7 +46,18 @@ def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=
     
     try:
         # Use the LangGraph-based agent for search with conversation history
-        result = langgraph_search(query, focus_mode, conversation_id, conversation_history)
+        result = langgraph_search(query, focus_mode, conversation_id, conversation_history, stream=stream)
+        
+        # Handle streaming response
+        if stream and result.get("is_streaming", False) and result.get("answer_generator"):
+            # Add the user query to the conversation history
+            conversation_manager.add_message(conversation_id, "user", query)
+            
+            # Create a placeholder for the assistant message that will be updated
+            message_id = conversation_manager.add_message(conversation_id, "assistant", "", sources=result.get("search_results"))
+            
+            # Return the streaming generator, search results, conversation ID, and message ID for updating
+            return result.get("answer_generator"), result.get("search_results"), conversation_id, message_id
         
         # If there's an error in the LangGraph agent, log it
         if result.get("error"):

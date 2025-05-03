@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="Perplexica",
     page_icon="🔎",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
 def hide_markdown_header_links():

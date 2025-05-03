@@ -270,6 +270,35 @@ class ConversationManager:
             logger.error(f"Error getting conversations: {str(e)}")
             return []
     
+    def update_message_content(self, message_id: int, content: str) -> bool:
+        """
+        Update the content of an existing message
+        
+        Args:
+            message_id (int): The message ID
+            content (str): The new content
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "UPDATE messages SET content = ? WHERE id = ?",
+                (content, message_id)
+            )
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Updated content for message {message_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating message content: {str(e)}")
+            return False
+    
     def delete_conversation(self, conversation_id: int) -> bool:
         """
         Delete a conversation and all its messages

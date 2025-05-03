@@ -16,7 +16,7 @@ def render_discover_tab():
     with col1:
         selected_topic = st.selectbox("Topic", topics, index=0)
     with col2:
-        if st.button("Refresh", use_container_width=True):
+        if st.button("Refresh"):
             # Clear cache to refresh results
             st.session_state.discover_results = None
             st.rerun()
@@ -105,7 +105,8 @@ def display_discover_grid(articles):
                 st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
                 
             # Use Streamlit's built-in link_button for better compatibility
-            st.link_button("Read the full article", article['url'], type="secondary", icon="🔗")
+            # st.link_button("Read the full article", article['url'], type="secondary", icon="🔗")
+            st.markdown(f"<a href='{article['url']}' target='_blank'>{article['url']}</a>", unsafe_allow_html=True)
 
             if st.button("Explore this story", key=f"search_{i}", use_container_width=True):
                 # Set up a search query based on the article

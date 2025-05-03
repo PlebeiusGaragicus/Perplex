@@ -27,7 +27,7 @@ class AgentState(BaseModel):
     steps_taken: List[str] = Field(default_factory=list, description="Steps taken by the agent")
 
 # Create a simpler search function that doesn't use LangGraph
-def perform_search(query: str, focus_mode: str = "all", conversation_id: Optional[int] = None, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+def perform_search(query: str, focus_mode: str = "all", conversation_id: Optional[int] = None, conversation_history: Optional[List[Dict[str, str]]] = None, stream: bool = False) -> Dict[str, Any]:
     """Perform a search using a sequential approach instead of LangGraph
     
     Args:
@@ -144,39 +144,77 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
         # Create a custom Ollama client with the correct host URL
         client = ollama.Client(host=ollama_url)
         
-        # Use the client to make the chat request
-        response = client.chat(
-            model=model,
-            messages=messages,
-            options={"temperature": 0.7}
-        )
+        # Function to handle streaming - returns a generator
+        def generate_streaming_response():
+            # Use the client to make the streaming chat request
+            stream_response = client.chat(
+                model=model,
+                messages=messages,
+                options={"temperature": 0.7},
+                stream=True
+            )
+            
+            # Initialize an empty answer
+            full_answer = ""
+            
+            # Yield each chunk as it comes in
+            for chunk in stream_response:
+                if "message" in chunk and "content" in chunk["message"]:
+                    content = chunk["message"]["content"]
+                    full_answer += content
+                    yield content, full_answer
+            
+            # Return the final answer
+            return None, full_answer
         
-        # Extract answer
-        answer = response["message"]["content"]
-        state.steps_taken.append("Generated answer with Ollama")
+        # Handle streaming or non-streaming based on the stream parameter
+        state.steps_taken.append("Generating answer with Ollama")
         
-        # Process citations
-        citations = []
-        for i, result in enumerate(results):
-            if f"[{i+1}]" in answer:
-                citations.append({
-                    "id": i+1,
-                    "title": result.get("title", "No title"),
-                    "url": result.get("url", "No URL")
-                })
-        
-        state.answer = answer
-        state.citations = citations
-        
-        # Return results
-        return {
-            "query": query,
-            "answer": state.answer,
-            "citations": state.citations,
-            "error": None,
-            "search_results": state.search_results,
-            "steps": state.steps_taken
-        }
+        if stream:
+            # Return the streaming generator
+            return {
+                "query": query,
+                "answer_generator": generate_streaming_response,
+                "citations": [],  # Will be populated later
+                "error": None,
+                "search_results": state.search_results,
+                "steps": state.steps_taken,
+                "is_streaming": True
+            }
+        else:
+            # Non-streaming mode - get the full response at once
+            response = client.chat(
+                model=model,
+                messages=messages,
+                options={"temperature": 0.7}
+            )
+            
+            # Extract answer
+            answer = response["message"]["content"]
+            
+            # Process citations
+            citations = []
+            for i, result in enumerate(results):
+                if f"[{i+1}]" in answer:
+                    citations.append({
+                        "id": i+1,
+                        "title": result.get("title", "No title"),
+                        "url": result.get("url", "No URL")
+                    })
+            
+            state.answer = answer
+            state.citations = citations
+            
+            # Return results
+            return {
+                "query": query,
+                "answer": state.answer,
+                "citations": state.citations,
+                "error": None,
+                "search_results": state.search_results,
+                "steps": state.steps_taken,
+                "is_streaming": False
+            }
         
     except Exception as e:
         logger.error(f"Error in search process: {str(e)}")
