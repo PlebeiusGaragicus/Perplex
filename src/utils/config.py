@@ -25,7 +25,7 @@ def load_config():
             "ollama": {
                 # "base_url": "http://10.10.10.10:11434",
                 "base_url": "http://host.docker.internal:11434",
-                "default_model": "phi4:14b-q8_0"
+                "default_model": "phi4:14b-q8_0" #TODO: don't hardcode this - should start blank.  The user should select from settings on first run to pick from the models their ollama instance has
             },
             "searxng": {
                 "url": "http://10.10.10.10:4001"
