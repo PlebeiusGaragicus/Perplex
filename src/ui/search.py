@@ -1,15 +1,15 @@
 import streamlit as st
 from src.agents.search_agent import perform_search
-from src.data.conversation import ConversationManager
 from src.ui.common import center_text
 
-def render_search_interface():
+def render_search_interface(conversation_manager):
 
     """
     Renders the main search interface for Perplexed
+    
+    Args:
+        conversation_manager (ConversationManager, optional): Instance of ConversationManager to use
     """
-    # Initialize conversation manager
-    conversation_manager = ConversationManager()
     
     # Initialize session state variables
     if "active_conversation_id" not in st.session_state:
@@ -120,6 +120,7 @@ def render_search_interface():
             # Perform search with streaming enabled
             result = perform_search(
                 query=query,
+                conversation_manager=conversation_manager,
                 focus_mode=st.session_state.focus_mode,
                 copilot_mode=st.session_state.copilot_mode,
                 conversation_id=st.session_state.active_conversation_id,

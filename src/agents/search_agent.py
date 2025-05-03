@@ -15,13 +15,11 @@ from src.data.conversation import ConversationManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize the conversation manager as a module-level singleton
-conversation_manager = ConversationManager()
 
-def perform_search(query, focus_mode="all", copilot_mode=False, conversation_id=None, stream=True):
+def perform_search(query, conversation_manager, focus_mode="all", copilot_mode=False, conversation_id=None, stream=True):
     """
     Perform a search and return results
-    
+
     Args:
         query (str): The search query
         focus_mode (str): The focus mode for search

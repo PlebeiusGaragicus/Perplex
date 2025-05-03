@@ -226,6 +226,3 @@ def perform_search(query: str, focus_mode: str = "all", conversation_id: Optiona
             "search_results": state.search_results,
             "steps": state.steps_taken + [f"Error: {str(e)}"]
         }
-
-# This is the only perform_search function we need now
-# The LangGraph approach was replaced with a simpler sequential approach

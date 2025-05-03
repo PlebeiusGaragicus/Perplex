@@ -6,6 +6,7 @@ from src.ui.search import render_search_interface
 from src.ui.discover import render_discover_tab
 from src.ui.settings import render_settings
 from src.utils.session import initialize_session_state
+from src.data.conversation import ConversationManager
 
 from src.ui.common import cprint, Colors
 # cprint(f"RUNNING for: {ip_addr} - {lang} - {user_agent}", Colors.YELLOW)
@@ -49,12 +50,16 @@ def main():
 
     # hide_markdown_header_links()
     
-    # Render sidebar
-    render_sidebar()
+    # Create a single ConversationManager instance to be shared
+    conversation_manager = ConversationManager()
+    cprint("Created shared ConversationManager instance", Colors.GREEN)
+    
+    # Render sidebar with the shared conversation manager
+    render_sidebar(conversation_manager=conversation_manager)
     
     # Render main content based on selected tab
     if st.session_state.current_tab == "search":
-        render_search_interface()
+        render_search_interface(conversation_manager=conversation_manager)
     elif st.session_state.current_tab == "discover":
         render_discover_tab()
     elif st.session_state.current_tab == "settings":

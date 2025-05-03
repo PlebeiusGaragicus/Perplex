@@ -3,9 +3,12 @@ from src.data.conversation import ConversationManager
 from src.ui.common import center_text
 from src.VERSION import VERSION
 
-def render_sidebar():
+def render_sidebar(conversation_manager):
     """
     Renders the sidebar navigation for Perplexed
+    
+    Args:
+        conversation_manager (ConversationManager, optional): Instance of ConversationManager to use
     """
     with st.sidebar:
         st.header("🔎 :rainbow[Perplexed]", divider="rainbow")
@@ -28,13 +31,10 @@ def render_sidebar():
             st.rerun()
         
         # Conversation history section
-        st.header("", divider="rainbow")
-        st.title(":green[Conversation History]")
+        st.header("📚 :green[Conversation History]", divider="rainbow")
+        # st.title(":green[Conversation History]")
         # center_text(type="h2", text="Conversation history")
-        
-        # Initialize conversation manager
-        conversation_manager = ConversationManager()
-        
+
         # New conversation button at the top
         if st.button("New thread", use_container_width=True, type="tertiary", icon="🌱"):
             st.session_state.active_conversation_id = None
