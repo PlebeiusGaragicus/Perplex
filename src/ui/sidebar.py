@@ -1,5 +1,6 @@
 import streamlit as st
 from src.data.conversation import ConversationManager
+from src.ui.common import center_text
 
 def render_sidebar():
     """
@@ -12,6 +13,7 @@ def render_sidebar():
         # Navigation tabs
         if st.button("🔍 Search", use_container_width=True, 
                     type="primary" if st.session_state.current_tab == "search" else "secondary"):
+            st.session_state.active_conversation_id = None
             st.session_state.current_tab = "search"
             st.rerun()
             
@@ -27,7 +29,8 @@ def render_sidebar():
         
         # Conversation history section
         st.markdown("---")
-        st.subheader("History")
+        st.title(":green[Conversation History]")
+        # center_text(type="h2", text="Conversation history")
         
         # Initialize conversation manager
         conversation_manager = ConversationManager()
@@ -35,6 +38,7 @@ def render_sidebar():
         # New conversation button at the top
         if st.button("New thread", use_container_width=True, type="secondary", icon="🌱"):
             st.session_state.active_conversation_id = None
+            st.session_state.current_tab = "search"
             st.rerun()
         
         # Get all conversations
@@ -74,23 +78,3 @@ def render_sidebar():
                             st.rerun()
         else:
             st.info("No conversations yet")
-            
-        st.markdown("---")
-        
-        # Focus mode selection (only visible in search tab)
-        if st.session_state.current_tab == "search":
-            st.subheader("Focus Mode")
-            focus_modes = {
-                "all": "🌐 All",
-                "writing": "✍️ Writing Assistant",
-                "academic": "📚 Academic",
-                "youtube": "▶️ YouTube",
-                "wolfram": "🧮 Wolfram Alpha",
-                "reddit": "🤖 Reddit"
-            }
-            
-            for mode_key, mode_label in focus_modes.items():
-                if st.button(mode_label, use_container_width=True, 
-                           type="primary" if st.session_state.focus_mode == mode_key else "secondary"):
-                    st.session_state.focus_mode = mode_key
-                    st.rerun()

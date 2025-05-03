@@ -30,21 +30,31 @@ def render_search_interface():
     center_text(type="h1", text="Perplexity Search")
     st.header("", divider="rainbow")
 
-    # Focus mode indicator
+    # Focus mode as radio buttons
     focus_mode_labels = {
         "all": "All Web Search",
         "writing": "Writing Assistant",
-        "academic": "Academic Search",
-        "youtube": "YouTube Search",
-        "wolfram": "Wolfram Alpha",
-        "reddit": "Reddit Search"
+        "academic": "Academic Search"
     }
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        selected_focus_mode = st.radio("Search mode:", list(focus_mode_labels.values()), 
+                                     horizontal=True, 
+                                     index=list(focus_mode_labels.keys()).index(st.session_state.focus_mode))
+        # Map the selected label back to the key
+        focus_mode_key = list(focus_mode_labels.keys())[list(focus_mode_labels.values()).index(selected_focus_mode)]
+        if focus_mode_key != st.session_state.focus_mode:
+            st.session_state.focus_mode = focus_mode_key
+            st.rerun()
 
-    # Copilot mode toggle in the main area with improved explanation
-    copilot_enabled = st.toggle("Enable Copilot Mode", value=st.session_state.copilot_mode)
-    if copilot_enabled != st.session_state.copilot_mode:
-        st.session_state.copilot_mode = copilot_enabled
-        st.rerun()
+    with col2:
+        # Copilot mode toggle in the main area
+        copilot_enabled = st.toggle("Copilot Mode", value=st.session_state.copilot_mode)
+        if copilot_enabled != st.session_state.copilot_mode:
+            st.session_state.copilot_mode = copilot_enabled
+            st.rerun()
 
     # Update conversations in session state
     conversations = conversation_manager.get_conversations()

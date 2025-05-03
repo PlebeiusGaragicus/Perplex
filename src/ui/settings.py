@@ -1,12 +1,12 @@
 import streamlit as st
-import os
 from src.utils.config import save_config, load_config
+from src.ui.common import center_text
 
 def render_settings():
     """
     Renders the settings page for Perplexica
     """
-    st.title("Settings")
+    center_text(type="h1", text="Settings")
     
     # Load current configuration
     config = load_config()
