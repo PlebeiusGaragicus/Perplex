@@ -2,21 +2,16 @@
 Search agent module for Perplex
 """
 
-import logging
-from typing import Dict, List, Any, Optional, Tuple
-
 # Import the LangGraph-based agent
 from src.agents.langgraph_agent import perform_search as langgraph_search
-from src.data.searxng import perform_web_search
-from src.utils.config import load_config
-from src.data.conversation import ConversationManager
 
 # Configure logging
+import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def perform_search(query, conversation_manager, focus_mode="all", copilot_mode=False, conversation_id=None, stream=True):
+def perform_search(query, conversation_manager, focus_mode="all", copilot_mode=False, conversation_id=None):
     """
     Perform a search and return results
 
@@ -44,10 +39,10 @@ def perform_search(query, conversation_manager, focus_mode="all", copilot_mode=F
     
     try:
         # Use the LangGraph-based agent for search with conversation history
-        result = langgraph_search(query, focus_mode, conversation_id, conversation_history, stream=stream)
+        result = langgraph_search(query, focus_mode, conversation_id, conversation_history)
         
         # Handle streaming response
-        if stream and result.get("is_streaming", False) and result.get("answer_generator"):
+        if result.get("answer_generator"):
             # Add the user query to the conversation history
             conversation_manager.add_message(conversation_id, "user", query)
             
@@ -90,53 +85,14 @@ def perform_search(query, conversation_manager, focus_mode="all", copilot_mode=F
     except Exception as e:
         logger.error(f"Error in search agent: {str(e)}")
         
-        # Fallback to direct search if LangGraph agent fails
-        try:
-            # Get config
-            config = load_config()
-            searxng_url = config.get("searxng", {}).get("url", "http://searxng:8080")
-            
-            # Perform direct search - now returns (results, error_message)
-            results, search_error = perform_web_search(query, searxng_url, focus_mode)
-            
-            # Handle search error if present
-            if search_error:
-                error_message = f"Search error: {search_error}"
-                # Store the user query and error message in the conversation history
-                conversation_manager.add_message(conversation_id, "user", query)
-                conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
-                return error_message, [], conversation_id
-            
-            if not results:
-                error_message = "I couldn't find any results for your query. Please try a different search term or focus mode."
-                # Store the user query and error message in the conversation history
-                conversation_manager.add_message(conversation_id, "user", query)
-                conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
-                return error_message, [], conversation_id
-            
-            # Create a simple fallback response
-            fallback_response = f"Here are the search results for: {query}\n\n"
-            fallback_response += "I encountered an error when trying to generate an AI response. "
-            fallback_response += f"Error: {str(e)}\n\n"
-            
-            for i, result in enumerate(results):
-                title = result.get("title", "No title")
-                content = result.get("content", "No content")
-                url = result.get("url", "No URL")
-                fallback_response += f"[{i+1}] {title}\n{content}\nSource: {url}\n\n"
-            
-            # Store the user query and fallback response in the conversation history
-            conversation_manager.add_message(conversation_id, "user", query)
-            conversation_manager.add_message(conversation_id, "assistant", fallback_response, sources=results)
-            
-            return fallback_response, results, conversation_id
-            
-        except Exception as inner_e:
-            logger.error(f"Fallback search also failed: {str(inner_e)}")
-            error_message = f"Search failed: {str(e)}. Fallback also failed: {str(inner_e)}"
-            
-            # Store the user query and error message in the conversation history
-            conversation_manager.add_message(conversation_id, "user", query)
-            conversation_manager.add_message(conversation_id, "assistant", error_message, sources=[])
-            
-            return error_message, [], conversation_id
+        # No fallback - just report the error
+        error_message = f"Search error: {str(e)}"
+        
+        # Store the user query in the conversation history
+        conversation_manager.add_message(conversation_id, "user", query)
+        
+        # Raise the exception to be handled by the UI layer
+        # This will allow the UI to show the error and stop execution
+        import streamlit as st
+        st.error(error_message)
+        st.stop()

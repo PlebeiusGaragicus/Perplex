@@ -123,8 +123,7 @@ def render_search_interface(conversation_manager):
                 conversation_manager=conversation_manager,
                 focus_mode=st.session_state.focus_mode,
                 copilot_mode=st.session_state.copilot_mode,
-                conversation_id=st.session_state.active_conversation_id,
-                stream=True
+                conversation_id=st.session_state.active_conversation_id
             )
             
             # Check if we got a streaming response (4 items in tuple) or regular response (3 items)
