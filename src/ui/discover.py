@@ -2,25 +2,26 @@ import streamlit as st
 import random
 from datetime import datetime
 from src.data.searxng import search_news
+from src.ui.common import center_text
 
 def render_discover_tab():
     """
     Renders the Discover tab that displays current events and trending topics
     """
-    st.title("Discover")
-    
-    # Topic selection
+    center_text(type="h1", text="Discover")
+    st.header("", divider="rainbow")
+
+    # Topic selection with radio buttons
     topics = ["AI", "Technology", "Science", "Business", "Health"]
     
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        selected_topic = st.selectbox("Topic", topics, index=0)
-    with col2:
-        if st.button("Refresh"):
-            # Clear cache to refresh results
-            st.session_state.discover_results = None
-            st.rerun()
-    
+
+    selected_topic = st.radio("Topic:", topics, horizontal=True)
+
+    if st.button("Refresh", icon="♻️"):
+        # Clear cache to refresh results
+        st.session_state.discover_results = None
+        st.rerun()
+
     # Get or fetch discover results
     if "discover_results" not in st.session_state or st.session_state.discover_results is None:
         with st.spinner("Fetching latest news..."):
@@ -91,32 +92,28 @@ def display_discover_grid(articles):
     # Display articles in the grid
     for i, article in enumerate(articles):
         col_idx = i % 3
-        
-        with cols[col_idx]:
-            # Display title as header
-            st.markdown(f"### {article['title']}")
-            
-            # Display thumbnail if available
-            if 'thumbnail' in article and article['thumbnail']:
-                st.image(article['thumbnail'], use_column_width=True)
-            
-            # Display snippet as caption
-            if 'content' in article:
-                st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
-                
-            # Use Streamlit's built-in link_button for better compatibility
-            # st.link_button("Read the full article", article['url'], type="secondary", icon="🔗")
-            st.markdown(f"<a href='{article['url']}' target='_blank'>{article['url']}</a>", unsafe_allow_html=True)
 
-            if st.button("Explore this story", key=f"search_{i}", use_container_width=True):
-                # Set up a search query based on the article
-                st.session_state.search_query = f"Summarize: {article['url']}"
+        with cols[col_idx]:
+            with st.container(border=True):
+                st.subheader(f"[{article['title']}]({article['url']})")
+
+                # Display thumbnail if available
+                # if 'thumbnail' in article and article['thumbnail']:
+                #     st.image(article['thumbnail'], use_column_width=True)
+
+                # Display snippet as caption
+                if 'content' in article:
+                    st.caption(article['content'][:150] + "..." if len(article['content']) > 150 else article['content'])
+
+                if st.button("Explore this story", key=f"search_{i}", use_container_width=True, type="tertiary", icon="💬"):
+                    # Set up a search query based on the article
+                    st.session_state.search_query = f"Summarize: {article['url']}"
+                    
+                    # Clear the active conversation to start a new one
+                    st.session_state.active_conversation_id = None
+                    
+                    # Switch to search tab
+                    st.session_state.current_tab = "search"
+                    st.rerun()
                 
-                # Clear the active conversation to start a new one
-                st.session_state.active_conversation_id = None
-                
-                # Switch to search tab
-                st.session_state.current_tab = "search"
-                st.rerun()
-            
-            st.markdown("---")
+            # st.markdown("---")

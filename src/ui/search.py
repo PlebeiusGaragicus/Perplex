@@ -1,14 +1,7 @@
 import streamlit as st
 from src.agents.search_agent import perform_search
 from src.data.conversation import ConversationManager
-
-
-def center_text(type, text, size=None):
-    if size == None:
-        st.write(f"<{type} style='text-align: center;'>{text}</{type}>", unsafe_allow_html=True)
-    else:
-        st.write(f"<{type} style='text-align: center; font-size: {size}px;'>{text}</{type}>", unsafe_allow_html=True)
-
+from src.ui.common import center_text
 
 def render_search_interface():
 
@@ -25,7 +18,7 @@ def render_search_interface():
         st.session_state.conversations = []
     if "clear_query" not in st.session_state:
         st.session_state.clear_query = False
-        
+
     # Handle clearing the search query if needed
     if st.session_state.clear_query:
         # This needs to happen before any widgets are rendered
@@ -33,12 +26,10 @@ def render_search_interface():
             del st.session_state["search_query"]
         st.session_state.clear_query = False
     
-    # Conversation history is now handled in sidebar.py
-    
     # Main content area
-    # st.title("Perplexica Search")
     center_text(type="h1", text="Perplexity Search")
-    
+    st.header("", divider="rainbow")
+
     # Focus mode indicator
     focus_mode_labels = {
         "all": "All Web Search",
@@ -48,10 +39,6 @@ def render_search_interface():
         "wolfram": "Wolfram Alpha",
         "reddit": "Reddit Search"
     }
-    
-    # Display current mode
-    # mode_text = f"Mode: {focus_mode_labels[st.session_state.focus_mode]}"
-    # st.markdown(f"**{mode_text}**")
 
     # Copilot mode toggle in the main area with improved explanation
     copilot_enabled = st.toggle("Enable Copilot Mode", value=st.session_state.copilot_mode)
@@ -116,7 +103,7 @@ def render_search_interface():
         # Create a placeholder for the assistant's response
         assistant_placeholder = st.empty()
         
-        with st.spinner("Searching..."):
+        with st.spinner("Thinking..."):
             # Perform search with streaming enabled
             result = perform_search(
                 query=query,
@@ -142,11 +129,12 @@ def render_search_interface():
                             for j, source in enumerate(sources):
                                 st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
                         
+                        st.divider()
+
                         # Create a placeholder for the streaming text
                         message_placeholder = st.empty()
                         full_response = ""
-                        
-                        st.divider()
+
                         # Stream the response
                         for chunk, full_answer in answer_generator():
                             if chunk:  # Only update if there's new content
@@ -204,13 +192,16 @@ def display_conversation_history(conversation_manager):
         # Assistant response
         if i < len(messages) and messages[i]['role'] == 'assistant':
             with st.chat_message("assistant"):
-                st.markdown(messages[i]['content'])
-                
-                # Display sources if available
+                # Display sources first if available
                 if 'sources' in messages[i] and messages[i]['sources']:
                     sources = messages[i]['sources']
-                    st.divider()
-                    # with st.expander(f"Sources ({len(sources)})"):
                     for j, source in enumerate(sources):
                         st.markdown(f"**[{j+1}]** {source['title']} - <a href='{source['url']}' target='_blank'>{source['url']}</a>", unsafe_allow_html=True)
+                
+                # Add a divider after sources
+                if 'sources' in messages[i] and messages[i]['sources']:
+                    st.divider()
+                
+                # Display the message content
+                st.markdown(messages[i]['content'])
             i += 1

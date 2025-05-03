@@ -43,7 +43,7 @@ def main():
     # Initialize session state variables
     initialize_session_state()
 
-    hide_markdown_header_links()
+    # hide_markdown_header_links()
     
     # Render sidebar
     render_sidebar()

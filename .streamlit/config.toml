@@ -34,7 +34,7 @@ base = "dark"
 # FFAC1C
 
 # Primary accent color for interactive elements.
-primaryColor = "#FF7F50"
+primaryColor = "#1FB302"
 
 # Background color for the main content area.
 # backgroundColor = "blue"
